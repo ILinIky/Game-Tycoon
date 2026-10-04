@@ -1,0 +1,108 @@
+# Studio Zero
+
+Eigenständiges, deutschsprachiges Browser-Tycoon-Spiel. Eine große isometrische Büroszene bildet die Hauptansicht. Das Studio wächst vom ersten Schreibtisch zum Campus. Der spielbare Loop: gründen → entwickeln → veröffentlichen → Reviews → Verkäufe → wachsen.
+
+## Starten
+
+Unter Windows: `start.bat` doppelklicken, um den Server im Hintergrund zu starten und das Spiel im Browser zu oeffnen. `stop.bat` beendet gezielt diesen Spielserver. Spielstaende bleiben im Browser erhalten. Node.js und einmalig installierte Abhaengigkeiten sind erforderlich. Server-Logs stehen in `.studio-zero/`.
+
+```sh
+npm install
+npm run dev
+```
+
+Die lokale Adresse wird im Terminal angezeigt. Die aktuell laufende Vorschau ist unter `http://127.0.0.1:5180/` erreichbar. Bei belegtem Standardport: `npm run dev -- --port 5180 --host 127.0.0.1 --strictPort`. `npm run build` prüft TypeScript strict und erstellt den Produktionsbuild in `dist`. `npm run preview` startet dessen Vorschau. `npm test` prüft Simulation und Audio-Lebenszyklus.
+
+## Spielen
+
+Beginne auf dem Titelbildschirm mit „Neues Studio“. Du startest am 1. Januar 1990 mit einem Gründer, 50.000 € und einem kleinen Büro. Die Zeit ist zunächst pausiert. Starte über „Neues Spiel“ ein Indie-Projekt, weise den Gründer zu und wähle 1×, 4×, 8× oder 12×. Ein Tag dauert bei 1× 1,6 Sekunden. Alle Spielmenüs und der Produktionsplan halten die Zeit während deiner Entscheidungen an. Nach dem Schließen läuft die gewählte Geschwindigkeit weiter. Die Studioverwaltung behält beim Seitenwechsel dieselbe Rahmengröße; nur der Inhalt blendet weich um. Fertige Spiele veröffentlichst du bewusst per Button. Der Release zeigt die echte Gesamtwertung und vier Kritiken. Verkäufe beginnen danach täglich; Reviews, Teamfähigkeiten, Bugs, Genre-Nachfrage, Marketing, Plattformreichweite und Reputation beeinflussen das Ergebnis.
+
+Die einblendbare **Verkaufsanzeige** zeigt aktive Veröffentlichungen direkt im Büro. Tagesbalken, Monatsumsatz und ein mitwandernder Cursor folgen dem Spielkalender. Im Spielearchiv kannst du Monate wechseln und Tage per Maus oder Pfeiltasten auswählen. Verkäufe laufen 360 Tage, bei einer Wertung über 7,5 für 540 Tage; während der letzten 60 Tage sinkt die Nachfrage sanft auf null. Pro Spiel bleiben die letzten 400 aufgezeichneten Tage erhalten. Alte Spielstände behalten ihre Gesamtzahlen; fehlende Tageswerte werden als unbekannt dargestellt, statt rückwirkend erfunden zu werden.
+
+Klicke einen Mitarbeiter im Büro oder sein Kürzel unten links an, um Fähigkeiten, Energie, Motivation und Weiterbildung zu öffnen. Projekt-Whiteboard, Spielearchiv, Forschung und freie Arbeitsplätze sind direkt im Raum anklickbar. Laufende Spiele stehen links über der Aktionsleiste; ein Klick zeigt eine zum Thema passende Entwicklungsillustration, die sich mit dem Projektfortschritt erweitert. Diese Vorschau ist eine Illustration, kein spielbares Minispiel.
+
+Ziehen verschiebt die Kamera, das Mausrad oder +/− ändern den Zoom. Der Kamera-Pfeil setzt die Ansicht zurück, der Rahmen schaltet Vollbild um. **Leertaste** pausiert/setzt fort, **N** öffnet den Produktionsplan, **M** schaltet den Ton an/aus, **Esc** schließt Menüs oder Details. Animationen lassen sich im Spielmenü abschalten; die Systemeinstellung für reduzierte Bewegung wird beim ersten Start berücksichtigt. Die Option wirkt auf die Szene, Menüübergänge, Klickfeedback und Release-Effekte.
+
+Das **Studio-Radio** unten rechts oder im Spielmenü enthält drei getrennte Regler für Musik, Spielsounds und Raumklang. Der originale Track „Golden Hour“ ist eine fortlaufende Lo-Fi-Komposition aus weichen Akkorden, Keys, Bass und sanfter Percussion. Die Web-Audio-Klänge entstehen lokal; es gibt keine externen Musikdownloads. Audio startet erst nach der ersten Tastatur- oder Pointer-Interaktion. Lautstärken und Stummschaltung bleiben separat vom Spielstand gespeichert. Im Hintergrund pausiert der Ton; nach längeren Unterbrechungen werden keine verpassten Noten nachgeholt. Menüs filtern und senken die Musik sanft ab. Klicks, Auswahl, Menüöffnung, Meldungen und Veröffentlichungen besitzen eigene Sounds.
+
+Die Atmosphäre ergänzt Sonnenstrahlen, vorbeiziehende Wolken, eine entfernte Skyline, Vögel, sanft bewegte Pflanzen, Kaffeedampf, CRT-Leuchten, eine Wanduhr und eine warme Stehlampe. Menüs, Detailfenster und Produktionsschritte öffnen und schließen mit animierten Übergängen. Releases erhalten Licht, Konfetti und eine musikalische Fanfare. Die Schriftfamilien Manrope und Oxanium sind mit ihren freien OFL-Lizenzen lokal als Fontsource-Pakete eingebunden und funktionieren ohne Internetverbindung.
+
+Im Produktionsplan wählst du zusätzlich den Designschwerpunkt **Spielsysteme**, **Technik** oder **Atmosphäre**. Er gewichtet die echten Teamfähigkeiten bei der Qualitätsberechnung. Eine klare kleine Idee reduziert das Entwicklungsbudget und die Arbeitszeit um 15 %, senkt das Bug-Risiko und die kreative Qualität leicht. Experimente kosten 25 % mehr Budget und 20 % mehr Zeit; sie erzeugen mehr Bugs und erhalten erst mit ausreichend starken Teamfähigkeiten einen Qualitätsbonus. Plattformlizenzen werden zusätzlich berechnet. Bestehende Spielstände ohne diese neuen Felder behalten ihre bisherige Berechnung.
+
+Recruiting liefert nach sieben Tagen drei Kandidaten. Büros begrenzen die Teamgröße.
+
+**Büro & Einrichtungen:** Es gibt sechs Gebäude vom ersten Büro bis zum Studio-Tower (3 bis 80 Plätze). Jedes Gebäude hat eine begrenzte Zahl an Räumen (1 bis 6) für Einrichtungen: Espressobar (+5 % Tempo, weniger Energieverlust), Lounge & Arcade (−30 % Stress), Bibliothek (+20 % Forschungspunkte), Serverraum (−20 % Bug-Risiko), Tonstudio, Testlabor und Technik-Werkstatt (+3 Qualität beim passenden Designschwerpunkt), Akademie (+50 % Lerntempo, günstigere Weiterbildung) und Showroom (+40 % Kampagnen-Hype, mehr Fans). Einrichtungen kosten einmalig und monatlich, stehen sichtbar an der linken Bürowand und lassen sich wieder räumen. Die Teamleiste unten links zeigt Belegung, Rolle, Status (arbeitet, Engine, gestresst, frei), Energie und laufendes Recruiting.
+
+**Konsolen-Generationen:** 18 fiktive Plattformen erscheinen zwischen 1990 und 2020 (PC, Konsolen, Handhelds, Smartphone, Cloud). Jede wird ein Jahr vorher angekündigt, wächst nach dem Launch, läuft einige Jahre und wird dann eingestellt; ihr Marktgewicht folgt diesem Lebenszyklus, und auch bereits veröffentlichte Spiele verlieren Käufer, wenn ihre Plattform ausläuft. Spiele im ersten Jahr einer Plattform sind Launch-Titel (+30 % Reichweite). Die Branche zeigt einen animierten Zeitstrahl.
+
+**Aufträge & Publisher:** Unter „Aufträge“ warten stets drei Auftragsarbeiten (Technik, Design, Grafik oder Audio) mit Frist und fester Bezahlung. 1–3 freie Mitarbeiter arbeiten daran; je besser ihr Skill zum geforderten Level passt, desto höher die Zahlung (60–120 %). Verpasste Fristen kosten Ruf. Im Produktionsplan kann ein Publisher ein Spiel finanzieren: Vorschuss sofort, Hype-Bonus, dafür 20–50 % des Umsatzes. Bessere Publisher arbeiten erst mit Studios mit gutem Ruf.
+
+**Marken & Fortsetzungen:** Spiele ab 6,0 lassen sich fortsetzen (im Archiv oder im Produktionsplan). Teil 2+ erbt Start-Hype, bekommt +3 Qualität und bis zu +36 % Verkäufe; ab Teil 4 und bei zu schnellen Fortsetzungen (unter 1,5 Jahren) setzt Serienmüdigkeit ein.
+
+**Preis, Rabatt & Erweiterungen:** Veröffentlichte Spiele haben einen wählbaren Preis (60–140 %); starke Wertungen vertragen höhere Preise, schwächere verkaufen sich günstiger deutlich besser. Rabattaktionen (−25 % oder −50 %, 14 Tage, 90 Tage Pause) und bis zu drei Erweiterungen pro Spiel beleben die Verkäufe; jede Erweiterung verlängert die Verkaufsphase um 120 Tage.
+
+**Team:** Ab Skill 80 schalten Mitarbeiter eine Spezialisierung frei (Visionär, Engine-Guru, Art Director, Klangmagier, Story-Talent, Marketing-Ass, Teamleiter, Forschungsleiter). Das Potenzial begrenzt das Lernen. Loyalität sinkt bei Stress, Demotivation und Bezahlung unter Marktwert; unzufriedene Mitarbeiter erhalten Abwerbeangebote, die du mit einem Gegenangebot (+20 % Gehalt) beantworten kannst, sonst kündigen sie nach 14 Tagen.
+
+**Charts, Konkurrenz & Übernahmen:** Konkurrenzstudios veröffentlichen benannte Spiele, neue Studios gründen sich über die Jahre. Wöchentliche Top-10-Verkaufscharts vergleichen deine Spiele mit der Konkurrenz (Platz 1 bringt Ruf und eine Auszeichnung). Ab dem Studio-Campus lassen sich Konkurrenten übernehmen: Sie werden Tochterstudios mit monatlichem Gewinn, bringen Fans und oft einen erfahrenen Mitarbeiter.
+
+**GameExpo:** Jedes Jahr im Juni findet die Spielemesse statt. Ab April buchst du im Marketing einen Stand (1–3 Projekte in Entwicklung) für Hype und Fans; gute Projekte können „Best of Show“ gewinnen. Eine animierte Messe-Show fasst den Auftritt zusammen.
+
+**Auszeichnungen & Jahresrückblick:** Best Indie Game, Spiel des Jahres (ab 8,5), Best of Show und Nr. 1 der Charts landen im Trophäenschrank des Archivs und als Pokale im Bürorregal. Zum Jahreswechsel zeigt ein animierter Rückblick Umsatz, Gewinn, Fans, Team, Firmenwert und das beste Spiel; die Statistik führt eine Studiochronik.
+
+**Lebendiges Büro:** Die Beleuchtung folgt der Uhrzeit deines Computers (Morgen, Abendrot, Nacht mit leuchtenden Monitoren und Lampe; im Spielmenü abschaltbar). Die Jahreszeit folgt dem Spieldatum: Schnee, Laub oder Blüten in den Fenstern, im Dezember Lichterkette und Weihnachtsbaum. Nach einem Release jubelt das Team mit Konfetti, Stimmungsblasen zeigen Ideen, Kaffeedurst oder gute Laune, gestresste Mitarbeiter bekommen eine Gewitterwolke. Die besten Spiele hängen als Poster an der Wand, Spielhüllen im Regal tragen die Genrefarben.
+
+**Wirtschaft & Branchenwachstum:** Der Spielemarkt wächst jedes Jahr um 9 %. Im gleichen Maß steigen Einnahmen und alle Preise: Projektbudgets, Plattformlizenzen, Miete, Einrichtungen, Gehälter neuer Mitarbeiter, Recruiting, Forschung, Labor, Engines, Kampagnen, Patches, Weiterbildung, Kredite und die Insolvenzgrenze. Größere Spiele kosten deutlich mehr (Indie 5.000 €, Small 30.000 €, Medium 180.000 €, AAA 900.000 € in Preisen von 1990), verkaufen aber auch mehr und zu höheren Preisen (15 / 25 / 39 / 55 €). Fans wirken logarithmisch, die Genre-Erfahrung zählt bis fünf Releases, Wertungen folgen einer Sättigungskurve (gute Teams erreichen schnell 7–8, 9+ bleibt selten), und jeder eigene Release sättigt sein Genre ein wenig. Gehaltswünsche kommen einmal pro Jahr (+8 %). Ein Simulations-Bot prüft die Langzeitbalance: `SIM_OUT=sim.txt npx vitest run src/game/simulation/balance.sim.test.ts`. Die **Forschung** ist ein Techbaum mit 35 Technologien in sechs Zweigen (Grafik, Gameplay & KI, Audio, Produktion, Technik & Online, Business) über vier Stufen sowie drei wiederholbaren Programmen. Technologien haben Voraussetzungen, Jahresfreigaben und konkrete Effekte: Qualität für alle oder einzelne Genres, kürzere Entwicklung, günstigere Projekte, weniger Bugs, mehr Verkäufe, längere Verkaufsphasen, Start-Hype, Kampagnen-Hype, Fans, Forschungstempo und Engine-Level. Forschungspunkte entstehen täglich aus der Forschungsfähigkeit des Teams; untätige Mitarbeiter forschen 75 % mehr, Releases bringen je nach Projektgröße 14 bis 56 Punkte und ein neues Genre 6 Bonuspunkte. Das Labor lässt sich in drei Stufen ausbauen (benötigt das passende Büro, kostet monatlichen Unterhalt) und bietet bis zu drei parallele Forschungsplätze. Die Forschungsausrichtung Grundlagen, Ausgewogen, Angewandt oder Experimentell verschiebt Punkte, Tempo, Geistesblitze und Rückschläge. Laufende Forschung lässt sich gegen Erstattung der halben Punkte abbrechen. Ab 1992 steigen die Erwartungen der Presse jährlich, und wichtige Technologien werden einige Jahre nach Erscheinen zum Branchenstandard: Fehlen sie, kostet das je −3 Qualität und eine kritische Review-Zeile. Kampagnen und Qualitätspatches wirken auf Verkäufe.
+
+In der **Engine-Schmiede** entwickelst du eigene Engines in fünf Phasen (Architektur, Kernsystem, Modul-Integration, Optimierung, Feinschliff). Du wählst Name, Profil (Grafik, Systeme, Performance, Allround), erforschte Engine-Module und bis zu drei Teammitglieder; deren Programmierfähigkeit bestimmt Tempo und Stabilität. Ein animierter Engine-Kern zeigt Fortschritt, rotierende Zahnräder und andockende Module; im Büro erscheint auf den Monitoren der Entwickler ein Zahnrad. Fertige Engines liefern Level × 2 Qualität, +4 Qualität bei passendem Designschwerpunkt (Allround: +1,5 immer), Routine (−3 % Entwicklungszeit pro damit veröffentlichtem Spiel, max. −15 %) und Stabilität (bis −40 % Bug-Risiko). Neue Forschung macht Engines veraltet; Upgrades auf die nächste Version kosten 40 % weniger Aufwand für vorhandene Module. Ab Level 3 lassen sich Engines an andere Studios lizenzieren: monatliche Einnahmen nach Level, Alter und Reputation, dafür −2 Qualität für eigene Spiele mit dieser Engine. Es gibt Kredite, laufende Gehälter, regelmäßige Marktveränderungen, simulierte Konkurrenten und jährliche Indie-Awards. Bei einem Kontostand unter −15.000 € wird das Studio zahlungsunfähig.
+
+## Architektur
+
+Die **Produktionswarteschlange** plant bis zu 50 weitere Spiele aus gespeicherten Vorlagen: Vorlage wählen, auf „Warteschlange“ wechseln, einen Titel pro Zeile eingeben und das gemeinsame Genre wählen. Jeder Eintrag speichert die damaligen Vorlageneinstellungen; spätere Änderungen oder das Löschen der Vorlage verändern ihn nicht. Budget und Lizenzen werden erst beim tatsächlichen Start aus den aktuellen Preisen bezahlt. Spiele mit demselben Team starten in ihrer Reihenfolge, unabhängige Teams können parallel arbeiten. Belegte Mitarbeiter, fehlendes Kapital oder nicht verfügbare Plattformen werden als Wartegrund angezeigt. Links bleibt die Anzeige auch bei vielen Einträgen kompakt; unter „Entwicklung“ lassen sich Einträge umsortieren und entfernen. Die Queue-Pause stoppt neue Starts und automatische Veröffentlichungen, während laufende Entwicklung weiterläuft. „Automatisch veröffentlichen“ ist beim Einplanen zunächst aktiv und lässt fertige Spiele ohne Release-Dialog erscheinen; abgeschaltet wartet das Team auf deine manuelle Veröffentlichung. Gewöhnlich direkt gestartete Projekte bleiben manuell. Warteschlange, Reihenfolge und Pause gehören zum Spielstand und JSON-Export.
+
+Im Produktionsplan lassen sich bis zu acht **Produktionsvorlagen** speichern: Team, Plattformen, Umfang/Budget, Thema, Zielgruppe, Engine und Spieldesign. Vorlagen erscheinen beim nächsten Projekt als Schnellwahl. Nach Auswahl genügen Titel und Genre für „Direkt starten“. „Plan anpassen“ öffnet die übrigen Schritte. Belegte oder fehlende Mitarbeiter werden gemeldet; das Budget wird aus den aktuellen Lizenzen und Forschungseffekten neu berechnet. Gleichnamiges Speichern aktualisiert eine Vorlage. Vorlagen gehören zum Spielstand und werden mitexportiert.
+
+Alle Dropdowns verwenden die gemeinsame Komponente `src/components/game/GameSelect.tsx` mit Portal, Tastaturauswahl und kompakter HUD-Variante. Kostenbuttons verwenden das `detail`-Feld von `Button` und zeigen Aktion und Betrag untereinander bei einheitlicher Breite. Diese Konventionen stehen auch in `AGENTS.md` für zukünftige Änderungen.
+
+Die Statistik bietet auswählbare Kapital-, Umsatz- und Gewinnkarten mit animiertem Verlauf. Gewinn ergibt sich aus allen erfassten Einnahmen minus allen erfassten Kosten; Startkapital und Kredite sind kein Gewinn. Die 30-Tage-Perioden sind Simulationseinheiten und keine echten Kalendermonate. Mehrere aktive Releases lassen sich in der Verkaufsanzeige gemeinsam oder einzeln betrachten; unbekannte historische Tage bleiben gekennzeichnet.
+
+Die **Weltrangliste** öffnest du über das Pokal-Symbol rechts im Spiel oder in der Studioverwaltung. Sie vergleicht deinen simulierten Firmenwert mit **1.191 realen börsennotierten Unternehmen** aus vielen Branchen. Sie enthält die Top 1.000 von CompaniesMarketCap und 200 Firmen mit Gaming-Bezug, ohne doppelte Börsenkürzel. Suche, Branchen- und Länderfilter, EUR/USD, Seitenwechsel und „Um mein Studio“ erleichtern diesen Firmenvergleich; gleiche Werte teilen sich einen Rang. Statistik und Rangliste verwenden gemeinsam die bestehende Spielbewertung: max(0, Kapital − Schulden) + Fans × 12 € + Reputation × 900 €.
+
+Zusätzlich gibt es einen gerundeten **Weltrang im Spielweltmodell mit 200 Millionen Unternehmen**. Diese Gesamtzahl und die Verteilung privater Firmenwerte sind transparente Spielannahmen, keine weltweite Finanzstatistik. Festgelegte Wertstufen werden logarithmisch interpoliert und um höher bewertete reale Vergleichsfirmen ergänzt. „Deine Liga“ zeigt erreichbare Modellstufen rund um das Studio; die nächste Wachstumsmarke bleibt fest, bis du sie erreichst. Reale Börsenwerte und fiktive Modellstufen sind ausdrücklich gekennzeichnet. Ein gemessener exakter Weltrang ist aus dieser Datenbasis nicht ableitbar.
+
+Die Börsenwerte wurden am **04.10.2026** von [CompaniesMarketCap](https://companiesmarketcap.com/) abgerufen. Für Euro gilt der [EZB-Referenzkurs](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html) vom **02.10.2026**: 1 € = 1,1225 USD. Das sind gespeicherte Vergleichswerte, keine Live-Kurse und keine historischen Kurse zum Kalenderjahr im Spiel. Private Unternehmen sind nicht enthalten. Jeder reale Eintrag verlinkt seine Quelle; der Vergleich funktioniert offline. Zum bewussten Aktualisieren der Daten: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/refresh-leaderboard.ps1`. Der Import prüft Zeilenzahl, eindeutige Kürzel, Werte und Wechselkurs, bevor er die Datendatei überschreibt. Nach einer Aktualisierung Datenstand und Anzahl in dieser Dokumentation anpassen.
+
+- `src/game/types.ts`: serialisierbare Domänenmodelle.
+- `src/game/config/balance.ts`: zentrale Parameter, Plattformen und Projektgrößen.
+- `src/game/config/technologies.ts`: Techbaum, Laborstufen und Forschungsausrichtungen.
+- `src/game/config/engines.ts` und `src/game/engines`: Engine-Profile, Phasen, Boni und Lizenzen.
+- `src/game/config/offices.ts` und `src/game/office`: Gebäude, Einrichtungen und ihre Effekte.
+- `src/game/economy/scale.ts`: Branchenwachstum und skalierte Preise.
+- `src/game/simulation/bot.ts`: Skript-Spieler für Balance-Simulationen.
+- `src/game/config/platforms.ts`, `src/game/market/platforms.ts`: Plattformen und Lebenszyklen.
+- `src/game/contracts`: Auftragsarbeiten und Publisher-Deals.
+- `src/game/projects/franchise.ts`, `pricing.ts`: Fortsetzungen, Preise, Rabatte, Erweiterungen.
+- `src/game/employees/perks.ts`: Spezialisierungen, Loyalität und Abwerbung.
+- `src/game/market/rivals.ts`: Konkurrenzspiele, Charts und Übernahmen.
+- `src/game/marketing/expo.ts`, `src/game/progress/yearly.ts`: GameExpo, Auszeichnungen, Jahresrückblick.
+- `src/scene/officeLife.ts`: Tageszeit, Jahreszeiten, Jubel, Stimmungen, Poster und Pokale.
+- `src/game/simulation/tick.ts`: deterministischer Tages-Tick ohne React und ohne Browser-Abhängigkeiten.
+- `src/game/projects`, `employees`, `economy`, `market`, `research`, `events`: Fachlogik.
+- `src/store/gameStore.ts`: Zustand-Adapter und validierte Spieleraktionen.
+- `src/game/persistence/saves.ts`: IndexedDB, localStorage-Fallback und Prüfung importierter Daten.
+- `src/game/config/design.ts`: Designschwerpunkte, Ambitionen und ihre Auswirkungen.
+- `src/scene`: eigene isometrische Canvas-Zeichnung, Charaktere, Möblierung und Treffflächen, getrennt von der Simulation.
+- `src/components/game`: Büroszene, Kamerabedienung, Detailfenster, Spielillustrationen und Release-Inszenierung.
+- `src/components`: Produktionsplan und pausierende Studioverwaltung.
+- `src/hooks/useGameSession.ts`: Tages-Timer, Laden und Autosave.
+- `src/audio/StudioAudio.ts`: Audio-Mixer, ursprüngliche Komposition, Effektklänge und Hintergrundpause.
+- `src/hooks/useStudioAudio.ts`: Audiostart nach Nutzerinteraktion und Verbindung mit der Oberfläche.
+- `src/scene/atmosphere.ts`: Himmel, Licht, Dampf und weitere Umgebungsanimationen.
+- `src/atmosphere.css`: Spieltypografie, Materialeffekte, UI-Animationen und Radio.
+
+Die Szene zeigt tatsächliche Mitarbeiter, Kapazität und Veröffentlichungen. Arbeitsbewegungen, Code auf Monitoren und Pausenanimationen sind rein visuell. Mitarbeiterbewegungen stoppen bei Pause/Planung, während Licht und Umgebungsdetails weiterlaufen. Die Szene begrenzt bewegte Bilder auf ungefähr 60 FPS am Desktop und 30 FPS auf kleinen Bildschirmen. Bei abgeschalteten Animationen zeichnet sie nur geänderte Bilder; in Hintergrund-Tabs pausiert die Atmosphäre. Die Bildschirmauflösung wird bis zu einem Pixelverhältnis von 2 berücksichtigt.
+
+Autosave und drei manuelle Slots bleiben lokal im Browser. Zusätzlich zum Speichern nach Änderungen sichert ein Fünf-Sekunden-Takt den Fortschritt bei ununterbrochenen 8×/12×. JSON-Export und Import stehen in der Firmenverwaltung zur Verfügung. Laden pausiert die Zeit; bisherige 2×-Spielstände bleiben kompatibel. Kein Backend, kein Tracking, keine externen Bildassets. Für Hosting reicht ein statischer Webserver mit dem Inhalt von `dist`.
+
+## Bewusste Grenzen von 0.1
+
+Finanzperioden umfassen 30 Simulationstage; das sichtbare Datum folgt dem Kalender. Plattformgewichte sind in dieser Version fest, Genre-Trends ändern sich. Umfangreiche Publisher-Verträge, Teams mit eigener Verwaltung, Akquisitionen und eigene Plattformen gehören zum späteren Ausbau. Die Jahresauszeichnung bildet zunächst „Best Indie Game“ ab.

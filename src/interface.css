@@ -1,0 +1,546 @@
+.game-root .game-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 11px;
+  margin: 7px 0 0;
+  background: linear-gradient(135deg, #19333e, #102a34);
+  border: 1px solid #b5cbb540;
+  border-radius: 3px;
+  color: #e6ddc7;
+  font: 600 11px var(--font-body);
+  text-align: left;
+  box-shadow: inset 0 1px 0 #e8ddc40a;
+  white-space: normal;
+}
+.game-select > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-select > svg {
+  flex-shrink: 0;
+  color: #d9ba83;
+  transition: transform 0.16s ease-out;
+}
+.game-select > svg.turned {
+  transform: rotate(180deg);
+}
+.game-root .game-select:hover:not(:disabled),
+.game-root .game-select[aria-expanded="true"] {
+  border-color: #d9ba8399;
+  background: #213e46;
+}
+.game-root .game-select.compact {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 10px;
+  margin: 0;
+}
+.game-select-menu {
+  position: fixed;
+  z-index: 900;
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #a6b69a66 transparent;
+  background: linear-gradient(145deg, #263f47, #102934);
+  border: 1px solid #d5b77b70;
+  border-top: 2px solid #d5b77b;
+  border-radius: 4px;
+  color: #ece1c9;
+  font:
+    500 11px "Manrope Variable",
+    sans-serif;
+  box-shadow: 0 12px 35px #06172288;
+}
+.game-select-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 7px 9px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.game-select-option:has(small) {
+  min-height: 48px;
+}
+.game-select-option > span {
+  min-width: 0;
+}
+.game-select-option strong {
+  display: block;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.game-select-option small {
+  display: block;
+  color: #b4c6b4;
+  font-size: 9px;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+.game-select-option.is-active {
+  background: #b7c9ab16;
+}
+.game-select-option.is-selected {
+  color: #edc98d;
+  background: #d0ae7520;
+}
+.game-select-option[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.game-select-option > svg {
+  flex-shrink: 0;
+}
+.motion-off .game-select > svg {
+  transition: none;
+}
+.game-root .production-fields {
+  align-items: start;
+  gap: 16px;
+}
+.game-root .production-fields > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  min-width: 0;
+}
+.game-root .production-fields .game-select {
+  margin: 0;
+}
+.game-root .ranking-toolbar .game-select {
+  height: 39px;
+  margin: 0;
+  font-size: 10px;
+}
+.game-root .engine-form .game-select {
+  margin-top: 7px;
+}
+.game-root .button.button-stacked {
+  width: 140px;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  white-space: normal;
+}
+.button-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  line-height: 1.2;
+}
+.button-copy > span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.game-root .button-copy > small {
+  font: 600 10px var(--font-display);
+  color: inherit;
+  opacity: 0.78;
+  white-space: nowrap;
+}
+.production-shortcuts {
+  padding: 15px 28px;
+  border-bottom: 1px solid #b5cbb525;
+  background: #16313a;
+}
+.shortcut-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #cfb889;
+  font-size: 8px;
+  letter-spacing: 1px;
+  margin-bottom: 9px;
+}
+.shortcut-heading > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.shortcut-heading small {
+  color: #9fb8a8;
+}
+.game-root .production-shortcuts > p {
+  color: #adc0b0;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.shortcut-item {
+  display: flex;
+  min-width: 0;
+  background: #263f46;
+  border: 1px solid #b5cbb530;
+  border-radius: 3px;
+}
+.shortcut-item.selected {
+  border-color: #debe80;
+  background: #4e5648;
+}
+.shortcut-item > button:first-child {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 9px 11px;
+  background: transparent;
+  color: #e7d9b9;
+}
+.shortcut-item strong {
+  display: block;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shortcut-item small {
+  display: block;
+  font-size: 8px;
+  margin-top: 4px;
+  color: #adc0b0;
+}
+.shortcut-delete {
+  background: transparent;
+  color: #a7b4a6;
+  padding: 7px;
+  border-left: 1px solid #b5cbb518;
+}
+.shortcut-delete:hover {
+  color: #e2aa93;
+}
+.quick-plan {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #b5cbb520;
+  color: #d9c399;
+  font-size: 11px;
+}
+.quick-plan > span {
+  min-width: 0;
+}
+.quick-plan > span > svg {
+  vertical-align: middle;
+  margin-right: 5px;
+}
+.quick-plan small {
+  display: block;
+  color: #afc3b1;
+  font-size: 9px;
+  line-height: 1.6;
+  margin-top: 5px;
+}
+.quick-plan button {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  font-size: 9px;
+  color: #e3c28b;
+  border: 1px solid #d5b77b55;
+  background: transparent;
+  border-radius: 3px;
+}
+.game-root .production-shortcuts .preset-warning {
+  color: #e6b69b;
+  margin-top: 10px;
+}
+.quick-mode > span:not(:first-child) {
+  opacity: 0.38;
+}
+.game-root .project-quick .wizard-steps,
+.game-root .project-quick .form-intro {
+  display: none;
+}
+.game-root .project-quick .wizard-body {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.game-root .project-quick .production-shortcuts {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.game-root .project-quick .choice-grid .choice {
+  min-height: 36px;
+  padding: 8px 10px;
+}
+.quick-plan > span > svg {
+  display: inline-block;
+}
+.preset-save {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: #17313a;
+  border: 1px dashed #b5cbb54d;
+  margin-top: 16px;
+  border-radius: 3px;
+}
+.game-root .preset-save label {
+  flex: 1;
+  min-width: 140px;
+  margin: 0;
+}
+.preset-save input {
+  margin-bottom: 0;
+}
+.game-root .preset-save > p {
+  width: 100%;
+  font-size: 10px;
+  color: #c3d7b9;
+}
+.sales-game-picker > .game-select {
+  flex: 1;
+}
+.sales-game-picker > button:not(.game-select) {
+  height: 28px;
+}
+.sales-release-list {
+  border-top: 1px solid #b5cbb521;
+  margin: 0 12px 10px;
+  max-height: 90px;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.sales-release-list > button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #b9cdb7;
+  background: transparent;
+  padding: 6px 0;
+  border-bottom: 1px solid #b5cbb511;
+  text-align: left;
+}
+.sales-release-list > button > span {
+  min-width: 0;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sales-release-list strong {
+  text-align: right;
+  flex-shrink: 0;
+  font: 600 10px var(--font-display);
+  color: #e6cd9f;
+}
+.sales-release-list small {
+  display: block;
+  font: 7px var(--font-body);
+  color: #a5bbad;
+  margin-top: 2px;
+}
+.studio-financials {
+  padding: 20px;
+  border: 1px solid #cbb58350;
+  border-top: 2px solid #d5b77b;
+  border-radius: 4px;
+  background: linear-gradient(140deg, #17323f, #2a4546);
+  margin-bottom: 22px;
+}
+.financial-intro h2 {
+  font: 650 20px var(--font-display);
+  margin-top: 6px;
+}
+.game-root .financial-intro p {
+  font-size: 11px;
+  color: #a9bfb0;
+  margin-top: 7px;
+}
+.financial-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+.financial-metric {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  color: #aec7ba;
+  background: #122b36a1;
+  border: 1px solid #b5cbb536;
+  padding: 15px;
+  text-align: left;
+  border-radius: 3px;
+}
+.financial-metric.selected {
+  border-color: #e1bd7c;
+  background: linear-gradient(130deg, #a5ad7515, #d7b17a1b);
+}
+.financial-metric > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #e1c792;
+  font-size: 11px;
+  font-weight: 650;
+}
+.financial-metric > strong {
+  font: 650 clamp(16px, 2vw, 25px) var(--font-display);
+  color: #e9dabb;
+  margin: 11px 0 6px;
+  overflow-wrap: anywhere;
+}
+.financial-metric.in-loss > strong {
+  color: #e2aa96;
+}
+.financial-metric small {
+  color: #a9c0b0;
+  font-size: 9px;
+}
+.financial-metric b {
+  display: block;
+  color: #becfb8;
+  font-size: 8px;
+  margin-top: 12px;
+  font-weight: 550;
+}
+.financial-chart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #b5cbb52b;
+  padding-top: 17px;
+}
+.financial-chart-heading h3 {
+  font: 600 14px var(--font-display);
+}
+.financial-chart-heading span {
+  color: #a5bda9;
+  font-size: 8px;
+}
+.financial-score {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 13px;
+  background: #a8c49b0e;
+  border: 1px solid #b5cbb52b;
+  color: #debe85;
+  border-radius: 3px;
+}
+.financial-score > span {
+  flex: 1;
+}
+.financial-score strong {
+  display: block;
+  font-size: 11px;
+}
+.financial-score small {
+  display: block;
+  color: #a9bfa9;
+  font-size: 9px;
+  margin-top: 4px;
+}
+.financial-score > div {
+  width: 115px;
+  height: 5px;
+  background: #102831;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.financial-score i {
+  display: block;
+  height: 100%;
+  background: #b9caa0;
+}
+.game-root .financial-note {
+  color: #9eb7a7;
+  font-size: 9px;
+  margin-top: 12px;
+}
+@media (max-width: 720px) {
+  .production-shortcuts {
+    padding: 12px 17px;
+  }
+  .shortcut-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shortcut-item small {
+    font-size: 7px;
+  }
+  .quick-plan {
+    align-items: start;
+  }
+  .quick-plan button {
+    padding: 7px;
+  }
+  .studio-financials {
+    padding: 13px;
+  }
+  .financial-intro h2 {
+    font-size: 17px;
+  }
+  .financial-metrics {
+    gap: 6px;
+  }
+  .financial-metric {
+    padding: 10px 8px;
+  }
+  .financial-metric > span {
+    font-size: 9px;
+    gap: 5px;
+  }
+  .financial-metric > strong {
+    font-size: 14px;
+  }
+  .financial-metric small {
+    font-size: 8px;
+  }
+  .financial-metric b {
+    font-size: 7px;
+    line-height: 1.6;
+  }
+  .financial-chart-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .financial-score {
+    flex-wrap: wrap;
+  }
+  .financial-score > div {
+    width: 100%;
+  }
+}
+@media (max-height: 550px) and (min-width: 721px) {
+  .sales-release-list {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-select > svg {
+    transition: none;
+  }
+}
