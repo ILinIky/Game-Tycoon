@@ -1088,3 +1088,97 @@
     padding-bottom: 5px;
   }
 }
+
+/* Player group: own entry, card and membership badges. */
+.ranking-group-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  padding: 14px 18px;
+  border: 1px solid #d9b77870;
+  border-left: 3px solid var(--rank-gold);
+  border-radius: 5px;
+  background: linear-gradient(105deg, #d8b47712, #152d38b8 70%);
+  color: var(--rank-ink);
+}
+.ranking-group-identity {
+  min-width: 0;
+}
+.ranking-group-identity h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 5px 0 3px;
+  overflow-wrap: anywhere;
+}
+.ranking-group-identity small {
+  font-size: 8px;
+  color: var(--rank-muted);
+}
+.ranking-group-figures {
+  display: flex;
+  gap: 18px;
+}
+.ranking-group-figures span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ranking-group-figures small {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--rank-muted);
+}
+.ranking-group-figures strong {
+  font: 600 16px var(--font-display);
+  color: var(--rank-gold);
+  white-space: nowrap;
+}
+.ranking-group-card > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  background: transparent;
+  color: #b8dbc5;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ranking-group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 7px;
+  padding: 2px 5px;
+  border: 1px solid #ebc88b80;
+  border-radius: 2px;
+  background: #ebc88b1c;
+  color: var(--rank-gold);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  vertical-align: 1px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ranking-member-row {
+  background: #ebc88b08;
+  box-shadow: inset 3px 0 #ebc88b66;
+}
+@media (max-width: 1020px) {
+  .ranking-group-card {
+    grid-template-columns: auto 1fr;
+  }
+  .ranking-group-figures,
+  .ranking-group-card > button {
+    grid-column: 1 / -1;
+  }
+  .ranking-group-figures {
+    flex-wrap: wrap;
+  }
+}

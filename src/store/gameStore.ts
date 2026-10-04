@@ -2,7 +2,18 @@ import { acceptContract, cancelContract } from "../game/contracts/contracts";
 import { setPrice, startDlc, startSale } from "../game/projects/pricing";
 import { bookExpo } from "../game/marketing/expo";
 import { acquireStudio } from "../game/market/rivals";
-import { countPerk, resolvePoach } from "../game/employees/perks";
+import {
+  buyCompany,
+  sellCompany,
+  type CompanyOffer,
+} from "../game/market/holdings";
+import {
+  adjustSalary,
+  countPerk,
+  resolvePoach,
+  resolveSalary,
+  resolveTeamRaise,
+} from "../game/employees/perks";
 import type { BoothSize } from "../game/types";
 import { create } from "zustand";
 import {
@@ -74,8 +85,14 @@ type Store = {
   moveQueued: (id: string, direction: -1 | 1) => void;
   pauseQueue: (paused: boolean) => void;
   release: (id: string) => void;
-  recruit: (role: Role, seniority: "Junior" | "Senior", budget: number) => void;
+  recruit: (
+    role: Role,
+    seniority: "Junior" | "Senior",
+    budget: number,
+    instant?: boolean,
+  ) => void;
   hire: (id: string) => void;
+  adjustSalary: (id: string) => void;
   research: (id: string) => void;
   cancelResearch: (id: string) => void;
   researchFocus: (focus: ResearchFocus) => void;
@@ -101,6 +118,8 @@ type Store = {
   startDlc: (id: string) => void;
   bookExpo: (booth: BoothSize, projects: string[]) => boolean;
   acquireStudio: (name: string) => void;
+  buyCompany: (offer: CompanyOffer) => void;
+  sellCompany: (id: string) => void;
   reset: () => void;
 };
 export const useGame = create<Store>((set, get) => {
@@ -188,9 +207,10 @@ export const useGame = create<Store>((set, get) => {
         release(s, id);
         processProductionQueue(s);
       }),
-    recruit: (role, seniority, budget) =>
-      change((s) => recruit(s, role, seniority, budget)),
+    recruit: (role, seniority, budget, instant) =>
+      change((s) => recruit(s, role, seniority, budget, instant)),
     hire: (id) => change((s) => hire(s, id)),
+    adjustSalary: (id) => change((s) => adjustSalary(s, id)),
     research: (id) => change((s) => startResearch(s, id)),
     cancelResearch: (id) => change((s) => cancelResearch(s, id)),
     researchFocus: (focus) => change((s) => setResearchFocus(s, focus)),
@@ -284,16 +304,8 @@ export const useGame = create<Store>((set, get) => {
         const event = s.events.find((e) => e.id === id);
         if (!event?.decision) return;
         if (event.decision === "poach") return resolvePoach(s, id, accept);
-        for (const e of s.employees.filter((e) => e.role !== "Gründer")) {
-          if (accept) {
-            e.salary = Math.round(e.salary * BALANCE.raiseFactor);
-            e.motivation = clamp(e.motivation + 15);
-            e.loyalty = clamp(e.loyalty + 12);
-          } else {
-            e.motivation = clamp(e.motivation - 12);
-            e.loyalty = clamp(e.loyalty - 10);
-          }
-        }
+        if (event.decision === "salary") return resolveSalary(s, id, accept);
+        if (event.decision === "raise") return resolveTeamRaise(s, id, accept);
         delete event.decision;
         event.read = true;
       }),
@@ -304,6 +316,8 @@ export const useGame = create<Store>((set, get) => {
     startDlc: (id) => change((s) => startDlc(s, id)),
     bookExpo: (booth, projects) => change((s) => bookExpo(s, booth, projects)),
     acquireStudio: (name) => change((s) => acquireStudio(s, name)),
+    buyCompany: (offer) => change((s) => buyCompany(s, offer)),
+    sellCompany: (id) => change((s) => sellCompany(s, id)),
     reset: () => set({ game: initialState(), error: null }),
   };
 });

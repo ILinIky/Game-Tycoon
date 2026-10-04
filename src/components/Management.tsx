@@ -13,6 +13,7 @@ const Marketing = lazy(() => import("./views/Marketing"));
 const Finance = lazy(() => import("./views/Finance"));
 const Market = lazy(() => import("./views/Market"));
 const Statistics = lazy(() => import("./views/Statistics"));
+const GroupStats = lazy(() => import("./views/GroupStats"));
 const Journal = lazy(() => import("./views/Journal"));
 const Company = lazy(() => import("./views/Company"));
 const Leaderboard = lazy(() => import("./views/Leaderboard"));
@@ -28,6 +29,7 @@ const views: Record<string, ComponentType<{ newProject: (sequelOf?: string) => v
   Finanzen: Finance,
   Markt: Market,
   Statistiken: Statistics,
+  Group: GroupStats,
   Journal: Journal,
   Firma: Company,
   Weltrangliste: Leaderboard,
@@ -84,6 +86,10 @@ export default function Management({
       "Deine Geschichte in Zahlen.",
       "Jeder Release und jede Entscheidung hinterlassen ihre Spuren.",
     ],
+    Group: [
+      "Mehr als ein Studio.",
+      "Marktwert, Gewinne und Rang deiner Unternehmensgruppe.",
+    ],
     Firma: [
       "Dein Studio. Deine Regeln.",
       "Verwalte dein Unternehmen und sichere deinen Fortschritt.",
@@ -118,6 +124,7 @@ export default function Management({
                   Finanzen: "Dein Kapital",
                   Markt: "Die Spielebranche",
                   Statistiken: "Deine Studiogeschichte",
+                  Group: "Statistik Group",
                   Firma: "Spielstand & Studio",
                   Journal: "Nachrichten aus dem Studio",
                 } as Record<string, string>

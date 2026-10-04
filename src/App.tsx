@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Check,
   BookOpen,
+  Building,
   Building2,
   FolderKanban,
   Save,
@@ -34,6 +35,7 @@ import { BALANCE, OFFICES } from "./game/config/balance";
 import { money, number, dateLabel } from "./game/utils";
 import type { ReleasedGame } from "./game/types";
 import type { SceneTarget } from "./scene/studioRenderer";
+import StaffAlert from "./components/game/StaffAlert";
 import Management from "./components/Management";
 import ProjectWizard from "./components/ProjectWizard";
 import StudioWorld from "./components/game/StudioWorld";
@@ -74,6 +76,7 @@ const sections = [
   { page: "Weltrangliste", title: "Weltrangliste", icon: Trophy },
   { page: "Finanzen", title: "Finanzen", icon: Wallet },
   { page: "Statistiken", title: "Statistiken", icon: ChartNoAxesCombined },
+  { page: "Group", title: "Statistik Group", icon: Building },
   { page: "Journal", title: "Journal", icon: BookOpen },
   { page: "Firma", title: "Spielmenü", icon: Settings2 },
 ];
@@ -657,6 +660,12 @@ export default function App() {
                   {saved ? "Gespeichert" : "Wird gespeichert …"}
                 </button>
               </footer>
+              {!s.company.bankrupt && (
+                <StaffAlert
+                  animated={animated}
+                  onJournal={() => openMenu("Journal")}
+                />
+              )}
               <AnimatePresence mode="wait">
                 {latest && !employee && !project && (
                   <motion.button

@@ -464,6 +464,13 @@ function normalizeFeatures(s: GameState) {
         fields(x, ["since", "income", "strength"], ["name"]),
       )
     : [];
+  s.holdings = Array.isArray(s.holdings)
+    ? s.holdings
+        .filter((x) =>
+          fields(x, ["value", "since", "earned"], ["id", "name", "sector"]),
+        )
+        .filter((x, i, all) => all.findIndex((y) => y.id === x.id) === i)
+    : [];
   s.yearStats = fields(s.yearStats, [
     "year",
     "revenue",

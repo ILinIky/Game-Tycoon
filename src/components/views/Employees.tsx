@@ -1,5 +1,11 @@
-import { Sparkles } from "lucide-react";
-import { fairSalary, perkById } from "../../game/employees/perks";
+import { AlertTriangle, Sparkles, Zap } from "lucide-react";
+import {
+  fairSalary,
+  perkById,
+  unrestReasons,
+} from "../../game/employees/perks";
+import { headhuntCost } from "../../game/employees/recruiting";
+import { BALANCE } from "../../game/config/balance";
 import { assignmentLabel } from "../../game/employees/assignment";
 import { recruitBudgets } from "../../game/economy/scale";
 import { trainingCost } from "../../game/office/office";
@@ -29,8 +35,12 @@ function EmployeeCard({
   employee: Employee;
   candidate?: boolean;
 }) {
-  const { game: s, hire, train } = useGame();
+  const { game: s, hire, train, adjustSalary } = useGame();
   const busy = isWorking(s, e.id);
+  const full = s.employees.length >= OFFICES[s.company.office].capacity;
+  const fair = fairSalary(e, s);
+  const underpaid = !candidate && e.role !== "Gründer" && e.salary < fair * 0.9;
+  const reasons = candidate || e.role === "Gründer" ? [] : unrestReasons(e, s);
   return (
     <Card className="employee-card">
       <div className="employee-head">
@@ -93,20 +103,37 @@ function EmployeeCard({
             {candidate
               ? `${e.experience} Jahre Erfahrung`
               : (assignmentLabel(s, e.id) ?? "Verfügbar")}
-            {!candidate && e.role !== "Gründer" && e.salary < fairSalary(e, s) * 0.85 && (
-              <em className="underpaid"> · unter Marktwert ({money(fairSalary(e, s))})</em>
+            {underpaid && (
+              <em className="underpaid"> · unter Marktwert ({money(fair)})</em>
             )}
           </small>
         </div>
         <Button
           detail={candidate ? undefined : money(trainingCost(s))}
           secondary
-          disabled={!candidate && busy}
+          disabled={candidate ? full : busy}
           onClick={() => (candidate ? hire(e.id) : train(e.id))}
         >
-          {candidate ? "Einstellen" : "Training"}
+          {candidate ? (full ? "Büro voll" : "Einstellen") : "Training"}
         </Button>
       </div>
+      {(underpaid || (reasons.length > 0 && e.loyalty < 50)) && (
+        <div className="employee-unrest" role="status">
+          <span>
+            <AlertTriangle size={13} />
+            {e.loyalty < 35 ? "Kündigung droht" : "Unzufrieden"}:{" "}
+            {reasons.join(", ") || "geringe Loyalität"}
+          </span>
+          {underpaid && (
+            <Button
+              detail={`+${money(fair - e.salary)} / Monat`}
+              onClick={() => adjustSalary(e.id)}
+            >
+              Gehalt anpassen
+            </Button>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
@@ -115,7 +142,10 @@ export default function EmployeesView() {
   const s = store.game;
   const [role, setRole] = useState<Role>("Programmierung");
   const [seniority, setSeniority] = useState<"Junior" | "Senior">("Junior");
-  const [budget, setBudget] = useState(650);
+  const budgets = recruitBudgets(s);
+  const [chosenBudget, setBudget] = useState(0);
+  // Budgets grow with the market; keep the choice on a valid step.
+  const budget = budgets.includes(chosenBudget) ? chosenBudget : budgets[0];
   return (
     <>
       <Card className="recruit-panel">
@@ -125,7 +155,7 @@ export default function EmployeesView() {
           <p>
             {s.recruitment
               ? `Bewerbungen kommen in ${s.recruitment.remaining} Tagen.`
-              : "Schalte eine Anzeige. In sieben Tagen lernst du drei Kandidaten kennen."}
+              : `Schalte eine Anzeige: In ${BALANCE.recruitmentDays} Tagen lernst du ${BALANCE.candidates} Kandidaten kennen. Ein Headhunter stellt sie sofort vor.`}
           </p>
         </div>
         <div className="recruit-form">
@@ -162,19 +192,29 @@ export default function EmployeesView() {
               label="Recruiting-Budget"
               value={String(budget)}
               onChange={(value) => setBudget(Number(value))}
-              options={recruitBudgets(s).map((value) => ({
+              options={budgets.map((value) => ({
                 value: String(value),
                 label: money(value),
               }))}
             />
           </label>
-          <Button
-            disabled={!!s.recruitment || s.company.cash < budget}
-            onClick={() => store.recruit(role, seniority, budget)}
-          >
-            <Users size={16} />
-            Anzeige starten
-          </Button>
+          <div className="recruit-actions">
+            <Button
+              secondary
+              detail={money(budget)}
+              disabled={!!s.recruitment || s.company.cash < budget}
+              onClick={() => store.recruit(role, seniority, budget)}
+            >
+              <Users size={14} /> Anzeige · {BALANCE.recruitmentDays} Tage
+            </Button>
+            <Button
+              detail={money(headhuntCost(budget))}
+              disabled={!!s.recruitment || s.company.cash < headhuntCost(budget)}
+              onClick={() => store.recruit(role, seniority, budget, true)}
+            >
+              <Zap size={14} /> Sofort finden
+            </Button>
+          </div>
         </div>
       </Card>
       {s.candidates.length > 0 && (

@@ -5,7 +5,11 @@ export const BALANCE = {
   monthDays: 30,
   salaryDivisor: 30,
   bankruptcyLimit: -15000,
-  recruitmentDays: 7,
+  recruitmentDays: 3,
+  /** Candidates per recruiting round. */
+  candidates: 4,
+  /** Headhunters deliver at once for this multiple of the budget. */
+  headhuntFactor: 2,
   campaignCost: 1800,
   campaignHype: 18,
   loan: 25000,

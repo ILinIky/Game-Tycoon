@@ -118,5 +118,6 @@ export function initialState(): GameState {
     genreExperience: {},
     licenses: ["pc"],
     ...featureDefaults(0, BALANCE.initialCash, 0, 1, 0),
+    holdings: [],
   };
 }

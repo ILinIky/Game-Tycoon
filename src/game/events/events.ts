@@ -16,5 +16,6 @@ export function notify(
     read: false,
     decision,
   });
-  s.events = s.events.slice(0, 70);
+  // Open decisions stay until answered, even beyond the journal limit.
+  s.events = s.events.filter((e, i) => i < 70 || e.decision);
 }

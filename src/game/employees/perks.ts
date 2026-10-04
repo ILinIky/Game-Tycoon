@@ -1,6 +1,7 @@
 import type { Employee, GameProject, GameState, Skill } from "../types";
 import { clamp, random } from "../utils";
 import { notify } from "../events/events";
+import { BALANCE } from "../config/balance";
 import { marketScale, nice } from "../economy/scale";
 
 export interface Perk {
@@ -56,12 +57,39 @@ export function unlockPerks(s: GameState) {
 /** Salary the market would pay for this employee today. */
 export function fairSalary(e: Employee, s: Pick<GameState, "day">) {
   const skill = Object.values(e.skills).reduce((n, v) => n + v, 0) / 8;
-  return nice((900 + skill * 30) * marketScale(s));
+  return nice((600 + skill * 26) * marketScale(s));
 }
 
 const RIVALS = ["Northstar Works", "Cobalt Collective", "Fern Interactive", "Titan Forge", "Lumen Studios"];
 
-/** Monthly loyalty drift and poaching offers for unhappy staff. */
+/** Days an employee waits for a counter-offer before resigning. */
+export const POACH_DAYS = 14;
+/** Days between two salary requests of the same employee. */
+const SALARY_REQUEST_COOLDOWN = 120;
+
+const isUnderpaid = (e: Employee, s: Pick<GameState, "day">) => e.salary < fairSalary(e, s) * 0.9;
+
+/** Salary that keeps an employee: at least the market value, at least +20 %. */
+export function retentionSalary(e: Employee, s: Pick<GameState, "day">) {
+  return Math.max(nice(e.salary * 1.2), fairSalary(e, s));
+}
+
+/** Readable reasons why an employee is unhappy, most important first. */
+export function unrestReasons(e: Employee, s: Pick<GameState, "day">) {
+  const reasons: string[] = [];
+  if (isUnderpaid(e, s))
+    reasons.push(
+      `Gehalt unter Marktwert (${e.salary.toLocaleString("de-DE")} € statt ${fairSalary(e, s).toLocaleString("de-DE")} €)`,
+    );
+  if (e.stress > 60) reasons.push(`zu viel Stress (${Math.round(e.stress)} %)`);
+  if (e.motivation < 45) reasons.push(`wenig Motivation (${Math.round(e.motivation)} %)`);
+  return reasons;
+}
+
+const pendingFor = (s: GameState, id: string, decision?: "poach" | "salary") =>
+  s.events.some((ev) => ev.target === id && (decision ? ev.decision === decision : ev.decision === "poach" || ev.decision === "salary"));
+
+/** Monthly loyalty drift, salary requests and poaching offers for unhappy staff. */
 export function loyaltyTick(s: GameState) {
   for (const e of s.employees) {
     if (e.role === "Gründer") {
@@ -72,17 +100,34 @@ export function loyaltyTick(s: GameState) {
     const target =
       55 + (e.motivation - 60) * 0.5 - Math.max(0, e.stress - 50) * 0.6 - underpaid + (e.perk ? -5 : 0);
     e.loyalty = clamp(e.loyalty + (target - e.loyalty) * 0.15);
-    const pending = s.events.some((ev) => ev.decision === "poach" && ev.target === e.id);
-    if (e.loyalty < 35 && !pending && random(s) < 0.3) {
-      const rival = RIVALS[Math.floor(random(s) * RIVALS.length)];
+    // Staff ask for a raise first, before rivals get a chance.
+    const recentRequest = s.events.some(
+      (ev) => ev.target === e.id && ev.title === "Gehaltswunsch" && s.day - ev.day < SALARY_REQUEST_COOLDOWN,
+    );
+    if (isUnderpaid(e, s) && e.loyalty < 65 && !recentRequest && !pendingFor(s, e.id)) {
       notify(
         s,
-        "Abwerbeversuch",
-        `${rival} will ${e.name} abwerben. Ein Gegenangebot (+20 % Gehalt) hält ${e.name} im Team, sonst kündigt ${e.name} in 14 Tagen.`,
+        "Gehaltswunsch",
+        `${e.name} wünscht sich mehr Gehalt: ${fairSalary(e, s).toLocaleString("de-DE")} € statt ${e.salary.toLocaleString("de-DE")} € im Monat. Ohne Erhöhung sinkt die Loyalität weiter und Konkurrenten versuchen, ${e.name} abzuwerben.`,
+        "warning",
+        "salary",
+      );
+      s.events[0].target = e.id;
+      continue;
+    }
+    if (e.loyalty < 35 && !pendingFor(s, e.id, "poach") && random(s) < 0.3) {
+      const rival = RIVALS[Math.floor(random(s) * RIVALS.length)];
+      const reasons = unrestReasons(e, s);
+      notify(
+        s,
+        "Kündigung droht",
+        `${rival} will ${e.name} abwerben${reasons.length ? `. Grund: ${reasons.join(", ")}` : ""}. Mit ${retentionSalary(e, s).toLocaleString("de-DE")} € Gehalt bleibt ${e.name}, sonst kündigt ${e.name} in ${POACH_DAYS} Tagen.`,
         "warning",
         "poach",
       );
       s.events[0].target = e.id;
+      // Pause, so the offer cannot run out unnoticed at high speed.
+      s.speed = 0;
     }
   }
 }
@@ -95,6 +140,16 @@ export function dismiss(s: GameState, id: string) {
   for (const p of s.projects) p.team = p.team.filter((m) => m !== id);
   if (s.engineProject) s.engineProject.team = s.engineProject.team.filter((m) => m !== id);
   for (const c of s.contracts.active) c.team = c.team.filter((m) => m !== id);
+  closeDecisions(s, id);
+}
+
+/** Closes all open salary and poaching decisions of an employee. */
+function closeDecisions(s: GameState, id: string) {
+  for (const ev of s.events)
+    if (ev.target === id && (ev.decision === "poach" || ev.decision === "salary")) {
+      delete ev.decision;
+      ev.read = true;
+    }
 }
 
 export function resolvePoach(s: GameState, eventId: string, keep: boolean) {
@@ -105,10 +160,13 @@ export function resolvePoach(s: GameState, eventId: string, keep: boolean) {
   event.read = true;
   if (!e) return;
   if (keep) {
-    const raise = nice(e.salary * 0.2);
-    e.salary += raise;
+    const salary = retentionSalary(e, s);
+    const raise = salary - e.salary;
+    e.salary = salary;
     e.loyalty = clamp(e.loyalty + 35);
     e.motivation = clamp(e.motivation + 10);
+    e.stress = clamp(e.stress - 15);
+    closeDecisions(s, e.id);
     notify(s, "Gegenangebot angenommen", `${e.name} bleibt im Studio (+${raise.toLocaleString("de-DE")} € Gehalt).`, "success");
   } else {
     dismiss(s, e.id);
@@ -116,8 +174,74 @@ export function resolvePoach(s: GameState, eventId: string, keep: boolean) {
   }
 }
 
+/** Answers a single employee's salary request. */
+export function resolveSalary(s: GameState, eventId: string, accept: boolean) {
+  const event = s.events.find((ev) => ev.id === eventId);
+  if (!event || event.decision !== "salary") return;
+  const e = s.employees.find((x) => x.id === event.target);
+  delete event.decision;
+  event.read = true;
+  if (!e) return;
+  if (accept) {
+    const salary = Math.max(e.salary, fairSalary(e, s));
+    const raise = salary - e.salary;
+    e.salary = salary;
+    e.loyalty = clamp(e.loyalty + 25);
+    e.motivation = clamp(e.motivation + 8);
+    notify(s, "Gehalt angepasst", `${e.name} verdient jetzt ${salary.toLocaleString("de-DE")} € (+${raise.toLocaleString("de-DE")} €).`, "success");
+  } else {
+    e.loyalty = clamp(e.loyalty - 5);
+    e.motivation = clamp(e.motivation - 6);
+  }
+}
+
+/** Raises an underpaid employee to the market value on the player's initiative. */
+export function adjustSalary(s: GameState, id: string) {
+  const e = s.employees.find((x) => x.id === id);
+  if (!e || e.role === "Gründer") return;
+  const salary = fairSalary(e, s);
+  if (salary <= e.salary) throw new Error(`${e.name} verdient bereits den Marktwert.`);
+  e.salary = salary;
+  e.loyalty = clamp(e.loyalty + 20);
+  e.motivation = clamp(e.motivation + 8);
+  closeDecisions(s, e.id);
+  notify(s, "Gehalt angepasst", `${e.name} verdient jetzt ${salary.toLocaleString("de-DE")} € im Monat.`, "success");
+}
+
+/** New salary of every employee after the yearly team raise. */
+export const teamRaiseSalary = (e: Employee, s: Pick<GameState, "day">) =>
+  Math.max(Math.round(e.salary * BALANCE.raiseFactor), fairSalary(e, s));
+
+/** Additional monthly costs of the yearly team raise. */
+export const teamRaiseCost = (s: GameState) =>
+  s.employees
+    .filter((e) => e.role !== "Gründer")
+    .reduce((n, e) => n + teamRaiseSalary(e, s) - e.salary, 0);
+
+/** Answers the yearly team-wide raise request. */
+export function resolveTeamRaise(s: GameState, eventId: string, accept: boolean) {
+  const event = s.events.find((ev) => ev.id === eventId);
+  if (!event || event.decision !== "raise") return;
+  for (const e of s.employees.filter((e) => e.role !== "Gründer")) {
+    if (accept) {
+      e.salary = teamRaiseSalary(e, s);
+      e.motivation = clamp(e.motivation + 15);
+      e.loyalty = clamp(e.loyalty + 12);
+      closeDecisions(s, e.id);
+    } else {
+      e.motivation = clamp(e.motivation - 12);
+      e.loyalty = clamp(e.loyalty - 10);
+    }
+  }
+  delete event.decision;
+  event.read = true;
+}
+
+/** Days until an unanswered poaching offer ends with a resignation. */
+export const poachDaysLeft = (s: GameState, eventDay: number) => Math.max(0, POACH_DAYS - (s.day - eventDay));
+
 /** Unanswered poaching offers end with the employee leaving. */
 export function expirePoaching(s: GameState) {
   for (const ev of s.events)
-    if (ev.decision === "poach" && s.day - ev.day >= 14) resolvePoach(s, ev.id, false);
+    if (ev.decision === "poach" && s.day - ev.day >= POACH_DAYS) resolvePoach(s, ev.id, false);
 }

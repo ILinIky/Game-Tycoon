@@ -1407,3 +1407,456 @@
     margin-left: 0;
   }
 }
+
+/* ---------- Team: Zufriedenheit & Recruiting ---------- */
+.recruit-actions {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.employee-unrest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border: 1px solid #eea68055;
+  border-radius: 4px;
+  background: #eea68014;
+  color: var(--ft-red);
+  font-size: 10.5px;
+}
+.employee-unrest > span {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.35;
+}
+.employee-unrest svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Offene Personalentscheidungen direkt im Studio */
+.staff-alert {
+  position: absolute;
+  top: 92px;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  z-index: 12;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: min(580px, calc(100% - 32px));
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #24434af2, #132d38f8);
+  border: 1px solid #d9b47b66;
+  border-top: 2px solid var(--ft-gold);
+  border-radius: 5px;
+  box-shadow: 0 10px 28px #071c2555;
+  color: var(--ft-text);
+}
+.staff-alert.danger {
+  border-color: #eea68088;
+  border-top-color: var(--ft-red);
+}
+.staff-alert-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--ft-gold-soft);
+  color: var(--ft-gold);
+}
+.staff-alert.danger .staff-alert-icon {
+  background: #eea68022;
+  color: var(--ft-red);
+}
+.staff-alert-copy {
+  min-width: 0;
+}
+.staff-alert-copy strong {
+  display: block;
+  font-size: 12.5px;
+}
+.staff-alert-copy p {
+  margin: 3px 0 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--ft-muted);
+}
+.staff-alert-more {
+  margin-top: 4px;
+  padding: 0;
+  background: transparent;
+  color: var(--ft-gold);
+  font-size: 10px;
+  font-weight: 700;
+}
+.staff-alert-actions {
+  display: flex;
+  gap: 6px;
+}
+.game-root .staff-alert-actions .button {
+  min-height: 48px;
+}
+@media (max-width: 720px) {
+  .staff-alert {
+    top: 112px;
+    grid-template-columns: auto 1fr;
+  }
+  .staff-alert-actions {
+    grid-column: 1 / -1;
+  }
+  .staff-alert-actions .button {
+    flex: 1;
+  }
+}
+
+/* ---------- Branche: Unternehmen übernehmen & Group ---------- */
+.acquisitions-card .company-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 0 10px;
+  background: var(--ft-deep);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ft-muted);
+}
+.acquisitions-card .company-search:focus-within {
+  border-color: var(--ft-gold);
+}
+.acquisitions-card .company-search input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--ft-text);
+  font-size: 12px;
+  outline: none;
+}
+.acquisitions-card .company-search input::placeholder {
+  color: #9ab0a6;
+}
+.acquisitions-card .company-search button {
+  padding: 3px;
+  background: transparent;
+  color: var(--ft-muted);
+}
+.company-list-caption {
+  display: block;
+  margin: 10px 0 6px;
+  font-size: 10px;
+  color: var(--ft-muted);
+}
+.company-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.company-offer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 110px 170px 140px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 4px;
+  background: #ffffff06;
+  border: 1px solid var(--line);
+}
+.company-offer.owned {
+  border-color: #afc89766;
+  background: var(--ft-green-soft);
+}
+.company-offer-info strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--ft-text);
+}
+.company-offer-info small,
+.company-offer-figure small {
+  display: block;
+  font-size: 9.5px;
+  color: var(--ft-muted);
+}
+.company-offer-figure b {
+  display: block;
+  font: 600 13px var(--font-display);
+  color: var(--ft-text);
+  white-space: nowrap;
+}
+.company-offer-figure.profit b {
+  color: var(--ft-green);
+}
+.company-offer .rival-owned {
+  justify-content: center;
+}
+.group-portfolio-heading {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.group-portfolio-heading h3 {
+  margin: 3px 0 10px;
+  font-size: 14px;
+  color: var(--ft-text);
+}
+.group-portfolio.empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  color: var(--ft-muted);
+  font-size: 11px;
+}
+.group-portfolio.empty p {
+  margin: 0;
+}
+.group-portfolio.empty strong {
+  color: var(--ft-gold);
+}
+.group-portfolio.empty svg {
+  flex-shrink: 0;
+  color: var(--ft-gold);
+}
+.group-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.group-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: 4px;
+  background: var(--ft-deep);
+  border: 1px solid var(--line);
+}
+.group-tile span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  color: var(--ft-muted);
+}
+.group-tile span svg {
+  color: var(--ft-gold);
+}
+.group-tile strong {
+  font: 600 16px var(--font-display);
+  color: var(--ft-green);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.group-members {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.group-members li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(80px, 1fr) 170px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 4px;
+  background: #ffffff06;
+  border: 1px solid var(--line);
+}
+.group-member-name strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ft-text);
+}
+.group-member-name small,
+.group-member-profit small {
+  display: block;
+  font-size: 9.5px;
+  color: var(--ft-muted);
+}
+.group-member-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #ffffff0d;
+  overflow: hidden;
+}
+.group-member-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #8fb07d, var(--ft-green));
+}
+.group-members li.subsidiary .group-member-bar i {
+  background: linear-gradient(90deg, #b8955d, var(--ft-gold));
+}
+.group-member-profit b {
+  display: block;
+  font: 600 13px var(--font-display);
+  color: var(--ft-green);
+  white-space: nowrap;
+}
+
+/* Statistik Group */
+.group-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 20px 22px;
+  border: 1px solid #d9b47b55;
+  border-left: 3px solid var(--ft-gold);
+  border-radius: 5px;
+  background: linear-gradient(110deg, #d9b47b14, #152f39 65%);
+  color: var(--ft-text);
+}
+.group-hero h2 {
+  margin: 4px 0 6px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.group-hero > div > strong {
+  display: block;
+  font: 700 28px var(--font-display);
+  color: var(--ft-gold);
+}
+.group-hero > div > small {
+  font-size: 10px;
+  color: var(--ft-muted);
+}
+.group-composition-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ffffff0d;
+}
+.group-composition-bar i,
+.group-dot {
+  display: block;
+  height: 100%;
+}
+.group-composition ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+.group-composition li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.group-composition li b {
+  margin-left: auto;
+  font-family: var(--font-display);
+}
+.group-composition li small {
+  width: 48px;
+  text-align: right;
+  color: var(--ft-muted);
+}
+.group-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+.group-composition-bar .studio,
+.group-dot.studio {
+  background: var(--ft-gold);
+}
+.group-composition-bar .subsidiaries,
+.group-dot.subsidiaries {
+  background: #a6c4d7;
+}
+.group-composition-bar .holdings,
+.group-dot.holdings {
+  background: var(--ft-green);
+}
+@media (max-width: 1150px) {
+  .company-offer {
+    grid-template-columns: auto minmax(0, 1fr) 140px;
+  }
+  .company-offer-figure {
+    grid-column: 2;
+  }
+  .company-offer-figure.profit {
+    grid-column: 2 / 4;
+  }
+  .company-offer .rival-buy,
+  .company-offer .rival-owned {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .group-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .group-members li {
+    grid-template-columns: minmax(0, 1fr) 150px;
+  }
+  .group-member-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .group-hero {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .recruit-actions {
+    width: 100%;
+  }
+  .recruit-actions .button {
+    flex: 1;
+  }
+  .employee-unrest {
+    flex-wrap: wrap;
+  }
+  .company-offer {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .company-offer-figure,
+  .company-offer-figure.profit,
+  .company-offer .rival-buy,
+  .company-offer .rival-owned {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .company-offer .rival-buy {
+    align-items: stretch;
+  }
+  .group-members li {
+    grid-template-columns: 1fr;
+  }
+  .group-member-bar {
+    grid-row: auto;
+  }
+}

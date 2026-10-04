@@ -314,6 +314,20 @@ export interface Subsidiary {
   income: number;
   strength: number;
 }
+/** Real company bought through the market, part of the player's group. */
+export interface Holding {
+  /** Ticker of the company in the market snapshot. */
+  id: string;
+  name: string;
+  sector: string;
+  /** Market value in euros at the time of purchase. */
+  value: number;
+  since: number;
+  /** Profit paid out to the studio so far. */
+  earned: number;
+  /** Last monthly payout. */
+  lastIncome?: number;
+}
 export interface YearStats {
   year: number;
   revenue: number;
@@ -345,7 +359,7 @@ export interface GameEvent {
   body: string;
   kind: "info" | "success" | "warning";
   read: boolean;
-  decision?: "raise" | "publisher" | "poach";
+  decision?: "raise" | "publisher" | "poach" | "salary";
   /** Employee or object the decision refers to. */
   target?: string;
 }
@@ -404,6 +418,7 @@ export interface GameState {
   expo: ExpoState;
   awards: Award[];
   subsidiaries: Subsidiary[];
+  holdings?: Holding[];
   yearStats: YearStats;
   yearReviews: YearReview[];
 }

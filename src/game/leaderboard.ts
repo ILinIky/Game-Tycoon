@@ -27,6 +27,18 @@ export interface RankedCompany {
   player: boolean;
   rank: number;
   model?: boolean;
+  /** The player's group as its own entry. */
+  group?: boolean;
+  /** Name of the player's group that owns this company. */
+  memberOf?: string;
+}
+/** The player's group as shown in the ranking. */
+export interface RankingGroup {
+  name: string;
+  /** Group value in euros. */
+  value: number;
+  /** Tickers of the companies that belong to the group. */
+  members: string[];
 }
 
 // Broad gameplay filters, rather than investment sector classifications.
@@ -157,9 +169,17 @@ export const realCompanies: Omit<RankedCompany, "rank">[] =
     player: false,
   }));
 
-export function buildRanking(company: Company): RankedCompany[] {
-  const entries = [
-    ...realCompanies,
+export function buildRanking(
+  company: Company,
+  group?: RankingGroup | null,
+): RankedCompany[] {
+  const members = new Set(group?.members ?? []);
+  const entries: Omit<RankedCompany, "rank">[] = [
+    ...realCompanies.map((entry) =>
+      group && members.has(entry.id)
+        ? { ...entry, memberOf: group.name }
+        : entry,
+    ),
     {
       id: "player-studio",
       name: company.name,
@@ -170,10 +190,25 @@ export function buildRanking(company: Company): RankedCompany[] {
       valueUsd: studioValuation(company) * marketSnapshot.usdPerEur,
       player: true,
     },
+    ...(group
+      ? [
+          {
+            id: "player-group",
+            name: group.name,
+            ticker: "DEINE GROUP",
+            country: "",
+            sector: "Medien & Spiele" as Sector,
+            gaming: true,
+            valueUsd: group.value * marketSnapshot.usdPerEur,
+            player: false,
+            group: true,
+          },
+        ]
+      : []),
   ].sort(
     (a, b) =>
       b.valueUsd - a.valueUsd ||
-      Number(a.player) - Number(b.player) ||
+      Number(a.player || !!a.group) - Number(b.player || !!b.group) ||
       a.id.localeCompare(b.id),
   );
   let rank = 1;
@@ -314,14 +349,25 @@ export function worldMilestone(entry: [number, string]): RankedCompany {
     model: true,
   };
 }
-export function worldNeighborhood(company: Company): RankedCompany[] {
-  const own = buildRanking(company).find((entry) => entry.player)!;
+export function worldNeighborhood(
+  company: Company,
+  group?: RankingGroup | null,
+): RankedCompany[] {
+  const ranking = buildRanking(company, group);
+  const own = ranking.find((entry) => entry.player)!;
+  const ownGroup = ranking.find((entry) => entry.group);
   const entries = [
     ...WORLD_MILESTONES.filter(([eur]) => eur !== studioValuation(company)).map(
       worldMilestone,
     ),
     { ...own, rank: estimatedWorldRank(own.valueUsd) },
+    ...(ownGroup
+      ? [{ ...ownGroup, rank: estimatedWorldRank(ownGroup.valueUsd) }]
+      : []),
   ].sort((a, b) => b.valueUsd - a.valueUsd);
   const index = entries.findIndex((entry) => entry.player);
-  return entries.slice(Math.max(0, index - 3), index + 4);
+  const groupIndex = entries.findIndex((entry) => entry.group);
+  const from = Math.min(index, groupIndex < 0 ? index : groupIndex);
+  const to = Math.max(index, groupIndex);
+  return entries.slice(Math.max(0, from - 3), to + 4);
 }

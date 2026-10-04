@@ -24,7 +24,27 @@ import {
   startDlc,
   startSale,
 } from "../projects/pricing";
-import { loyaltyTick, resolvePoach, unlockPerks } from "../employees/perks";
+import {
+  adjustSalary,
+  fairSalary,
+  loyaltyTick,
+  resolvePoach,
+  resolveSalary,
+  unlockPerks,
+} from "../employees/perks";
+import { recruit } from "../employees/recruiting";
+import {
+  buyCompany,
+  groupStats,
+  payHoldings,
+  sellCompany,
+} from "../market/holdings";
+import {
+  companyOffer,
+  companyPrice,
+  searchCompanies,
+} from "../market/companyMarket";
+import { buildRanking, realCompanies } from "../leaderboard";
 import {
   acquireStudio,
   acquisitionPrice,
@@ -193,6 +213,101 @@ describe("Mitarbeiter", () => {
     expect(event.target).toBe("e2");
     resolvePoach(s, event.id, false);
     expect(s.employees.some((x) => x.id === "e2")).toBe(false);
+  });
+  it("pausiert bei Abwerbeversuchen und hält Mitarbeiter mit Marktgehalt", () => {
+    const s = founded();
+    s.speed = 12;
+    const e = { ...structuredClone(s.employees[0]), id: "e2", name: "Mika", role: "Art" as const, loyalty: 5, stress: 95, motivation: 30, salary: 100 };
+    s.employees.push(e);
+    for (let i = 0; i < 40 && !s.events.some((ev) => ev.decision === "poach"); i++) loyaltyTick(s);
+    const event = s.events.find((ev) => ev.decision === "poach")!;
+    expect(s.speed).toBe(0);
+    expect(event.body).toContain("Gehalt unter Marktwert");
+    resolvePoach(s, event.id, true);
+    const kept = s.employees.find((x) => x.id === "e2")!;
+    expect(kept.salary).toBeGreaterThanOrEqual(fairSalary(kept, s));
+    expect(s.events.some((ev) => ev.target === "e2" && ev.decision)).toBe(false);
+  });
+  it("meldet Gehaltswünsche, bevor Mitarbeiter abgeworben werden", () => {
+    const s = founded();
+    const e = { ...structuredClone(s.employees[0]), id: "e2", name: "Mika", role: "Art" as const, loyalty: 60, stress: 10, motivation: 80, salary: 100 };
+    s.employees.push(e);
+    loyaltyTick(s);
+    const event = s.events.find((ev) => ev.decision === "salary")!;
+    expect(event.target).toBe("e2");
+    resolveSalary(s, event.id, true);
+    expect(s.employees[1].salary).toBe(fairSalary(s.employees[1], s));
+    expect(() => adjustSalary(s, "e2")).toThrow();
+  });
+  it("stellt neue Mitarbeiter zum Marktwert ein und findet sie per Headhunter sofort", () => {
+    const s = founded();
+    recruit(s, "Art", "Junior", 650, true);
+    expect(s.recruitment).toBeNull();
+    expect(s.candidates).toHaveLength(4);
+    expect(s.company.cash).toBe(50000 - 1300);
+    for (const c of s.candidates)
+      expect(c.salary).toBeGreaterThanOrEqual(fairSalary(c, s) * 0.9);
+  });
+  it("hält Dauerstress beschäftigter Mitarbeiter unter der Burnout-Grenze", () => {
+    let s = founded();
+    s.company.cash = 1e7;
+    for (let i = 0; i < 4; i++) {
+      createProject(s, { ...input, name: `Projekt ${i}` });
+      s = days(s, 120);
+      release(s, s.projects[0].id);
+    }
+    expect(s.employees[0].stress).toBeLessThan(60);
+  });
+});
+
+describe("Unternehmensübernahmen & Group", () => {
+  const cheapest = [...realCompanies].sort((a, b) => a.valueUsd - b.valueUsd)[0];
+  it("findet echte Unternehmen über die Suche", () => {
+    expect(searchCompanies("nvidia")[0].name).toBe("NVIDIA");
+    expect(searchCompanies("")).toEqual([]);
+  });
+  it("kauft zum Marktwert, zahlt Gewinne aus und verkauft wieder", () => {
+    const s = founded();
+    const price = companyPrice(cheapest);
+    expect(() => buyCompany(s, companyOffer(cheapest))).toThrow();
+    s.company.cash = price + 1000;
+    buyCompany(s, companyOffer(cheapest));
+    expect(s.company.cash).toBe(1000);
+    expect(() => buyCompany(s, companyOffer(cheapest))).toThrow();
+    const paid = payHoldings(s);
+    expect(paid).toBeGreaterThan(0);
+    expect(s.holdings![0].earned).toBe(paid);
+    const stats = groupStats(s);
+    expect(stats.active).toBe(true);
+    expect(stats.name).toBe(`${s.company.name} Group`);
+    expect(stats.value).toBeGreaterThan(price);
+    sellCompany(s, cheapest.id);
+    expect(s.holdings).toHaveLength(0);
+    expect(s.company.cash).toBeGreaterThan(price * 0.85);
+  });
+  it("zeigt Group und Mitgliedsfirmen in der Weltrangliste", () => {
+    const s = founded();
+    s.company.cash = companyPrice(cheapest);
+    buyCompany(s, companyOffer(cheapest));
+    const stats = groupStats(s);
+    const ranking = buildRanking(s.company, {
+      name: stats.name,
+      value: stats.value,
+      members: [cheapest.id],
+    });
+    expect(ranking.find((e) => e.group)?.name).toBe(stats.name);
+    expect(ranking.find((e) => e.id === cheapest.id)?.memberOf).toBe(stats.name);
+    expect(buildRanking(s.company).some((e) => e.group)).toBe(false);
+  });
+  it("lädt Beteiligungen aus Spielständen", () => {
+    const s = founded();
+    s.company.cash = companyPrice(cheapest);
+    buyCompany(s, companyOffer(cheapest));
+    const loaded = validateSave(JSON.parse(JSON.stringify(s)));
+    expect(loaded.holdings).toHaveLength(1);
+    const old = JSON.parse(JSON.stringify(s)) as Record<string, unknown>;
+    delete old.holdings;
+    expect(validateSave(old).holdings).toEqual([]);
   });
 });
 

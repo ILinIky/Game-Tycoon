@@ -19,9 +19,11 @@ import {
   expirePoaching,
   hasPerk,
   loyaltyTick,
+  teamRaiseCost,
   unlockPerks,
 } from "../employees/perks";
 import { paySubsidiaries, rivalsTick } from "../market/rivals";
+import { payHoldings } from "../market/holdings";
 import { expoTick } from "../marketing/expo";
 import { yearTick } from "../progress/yearly";
 export function tick(source: GameState): GameState {
@@ -106,13 +108,17 @@ export function tick(source: GameState): GameState {
   }
   for (const e of s.employees) {
     const busy = isWorking(s, e.id);
-    e.stress = clamp(e.stress + (busy ? 0.22 * (1 - facility.stress) : -0.65));
+    // Busy staff settle at a medium stress level instead of burning out.
+    e.stress = clamp(
+      e.stress +
+        (busy ? 0.22 * (1 - facility.stress) - e.stress * 0.004 : -0.65),
+    );
     e.energy = clamp(
       e.energy + (busy ? -0.1 * (1 - facility.energy) : 0.8),
       35,
     );
     e.motivation = clamp(
-      e.motivation + (e.stress > 60 ? -0.18 : busy ? -0.015 : 0.12),
+      e.motivation + (e.stress > 60 ? -0.18 : busy ? -0.008 : 0.12),
       25,
     );
     e.experience += busy ? 0.003 : 0;
@@ -137,6 +143,7 @@ export function tick(source: GameState): GameState {
   if (s.day % 30 === 0) {
     payLicenses(s);
     paySubsidiaries(s);
+    payHoldings(s);
     unlockPerks(s);
     loyaltyTick(s);
   }
@@ -154,7 +161,7 @@ export function tick(source: GameState): GameState {
     notify(
       s,
       "Zeit für Anerkennung",
-      "Dein Team wünscht sich eine Gehaltserhöhung.",
+      `Dein Team wünscht sich eine Gehaltserhöhung (+8 %, mindestens Marktwert): ${teamRaiseCost(s).toLocaleString("de-DE")} € mehr pro Monat.`,
       "warning",
       "raise",
     );

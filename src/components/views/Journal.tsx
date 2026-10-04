@@ -24,8 +24,10 @@ export default function JournalView() {
               <div className="button-row">
                 <Button onClick={() => store.decision(e.id, true)}>
                   {e.decision === "poach"
-                    ? "Gegenangebot (+20 % Gehalt)"
-                    : "Gehälter um 8 % erhöhen"}
+                    ? "Gegenangebot machen"
+                    : e.decision === "salary"
+                      ? "Gehalt erhöhen"
+                      : "Gehälter erhöhen"}
                 </Button>
                 <Button secondary onClick={() => store.decision(e.id, false)}>
                   {e.decision === "poach" ? "Ziehen lassen" : "Ablehnen"}

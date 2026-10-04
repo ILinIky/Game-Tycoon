@@ -127,13 +127,13 @@ describe("spielbarer Studio-Loop", () => {
     expect(s.company.reputation).toBeGreaterThan(0);
     expect(s.genreExperience.Strategie).toBe(1);
   });
-  it("erzeugt Kandidaten erst nach sieben Tagen und belastet laufende Gehälter", () => {
+  it("erzeugt Kandidaten nach drei Tagen und belastet laufende Gehälter", () => {
     let s = founded();
     recruit(s, "Programmierung", "Junior", 650);
-    s = days(s, 6);
+    s = days(s, 2);
     expect(s.candidates).toHaveLength(0);
     s = tick(s);
-    expect(s.candidates).toHaveLength(3);
+    expect(s.candidates).toHaveLength(4);
     hire(s, s.candidates[0].id);
     expect(s.employees).toHaveLength(2);
     expect(monthlyCosts(s)).toBeGreaterThan(1500);

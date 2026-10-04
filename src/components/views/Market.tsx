@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   Building,
+  Building2,
   Crown,
   Gamepad2,
   Minus,
@@ -10,8 +11,10 @@ import {
   Cloud,
   Monitor,
   Sparkles,
+  Search,
   Star,
   Tv,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useGame } from "../../store/gameStore";
@@ -26,8 +29,25 @@ import {
   acquisitionBlocker,
   acquisitionPrice,
 } from "../../game/market/rivals";
+import {
+  buyBlocker,
+  earningsYield,
+  groupName,
+  monthlyProfit,
+  ownsCompany,
+} from "../../game/market/holdings";
+import {
+  affordableCompanies,
+  cheapestCompanies,
+  companyOffer,
+  searchCompanies,
+  type Acquirable,
+} from "../../game/market/companyMarket";
+import { countryLabel, realCompanies } from "../../game/leaderboard";
+import GroupPortfolio, { compactEuro } from "../game/GroupPortfolio";
+import { useState } from "react";
 import { scaled } from "../../game/economy/scale";
-import { money, number, date } from "../../game/utils";
+import { money, number } from "../../game/utils";
 import { Button, Card, PanelTitle, Progress } from "../ui";
 import { useStudioMotion } from "../game/GameMotion";
 import type { GameState, Platform } from "../../game/types";
@@ -199,18 +219,114 @@ function RivalsCard({ s }: { s: GameState }) {
           );
         })}
       </div>
-      {s.subsidiaries.length > 0 && (
-        <div className="subsidiaries">
-          <span className="eyebrow">TOCHTERSTUDIOS</span>
-          {s.subsidiaries.map((x) => (
-            <div key={x.name}>
-              <strong>{x.name}</strong>
-              <small>seit {date(x.since).getUTCFullYear()}</small>
-              <b>+{money(scaled(s, x.income))} / Monat</b>
-            </div>
-          ))}
+    </Card>
+  );
+}
+
+function CompanyRow({ s, c }: { s: GameState; c: Acquirable }) {
+  const store = useGame();
+  const offer = companyOffer(c);
+  const price = offer.price;
+  const owned = ownsCompany(s, c.id);
+  const blocker = buyBlocker(s, offer);
+  const monthly = monthlyProfit({ id: c.id, sector: c.sector, value: price });
+  const yieldRate = earningsYield(c.id, c.sector);
+  return (
+    <li className={`company-offer ${owned ? "owned" : ""}`}>
+      <span className="rival-logo">
+        <Building2 size={16} />
+      </span>
+      <div className="company-offer-info">
+        <strong title={c.name}>{c.name}</strong>
+        <small>
+          {c.ticker} · {countryLabel(c.country)} · {c.sector}
+        </small>
+      </div>
+      <div className="company-offer-figure">
+        <small>Marktwert</small>
+        <b title={money(price)}>{compactEuro(price)}</b>
+      </div>
+      <div className="company-offer-figure profit">
+        <small>Gewinn / Monat</small>
+        <b>+{money(monthly)}</b>
+        <small>
+          {(yieldRate * 100).toLocaleString("de-DE", {
+            maximumFractionDigits: 1,
+          })}{" "}
+          % p. a. · amortisiert in {Math.round(1 / yieldRate)} J.
+        </small>
+      </div>
+      {owned ? (
+        <span className="rival-owned">
+          <Sparkles size={12} /> In deiner Group
+        </span>
+      ) : (
+        <div className="rival-buy">
+          <Button
+            secondary
+            disabled={!!blocker}
+            onClick={() => store.buyCompany(offer)}
+            detail={money(price)}
+          >
+            Übernehmen
+          </Button>
+          {blocker && <small>{blocker}</small>}
         </div>
       )}
+    </li>
+  );
+}
+
+function AcquisitionsCard({ s }: { s: GameState }) {
+  const [query, setQuery] = useState("");
+  const results = searchCompanies(query);
+  const affordable = affordableCompanies(s);
+  const list = query.trim()
+    ? results
+    : affordable.length
+      ? affordable
+      : cheapestCompanies(s);
+  return (
+    <Card className="acquisitions-card">
+      <PanelTitle
+        title="Unternehmen übernehmen"
+        eyebrow={`${realCompanies.length} BÖRSENUNTERNEHMEN · ZUM MARKTWERT`}
+      />
+      <label className="company-search">
+        <Search size={15} />
+        <input
+          aria-label="Unternehmen zum Übernehmen suchen"
+          placeholder="Unternehmen oder Börsenkürzel suchen …"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        {query && (
+          <button onClick={() => setQuery("")} aria-label="Suche leeren">
+            <X size={14} />
+          </button>
+        )}
+      </label>
+      <span className="company-list-caption" role="status">
+        {query.trim()
+          ? results.length
+            ? `${results.length} Treffer für „${query.trim()}“`
+            : `Kein Unternehmen gefunden für „${query.trim()}“.`
+          : affordable.length
+            ? "Die wertvollsten Unternehmen, die du dir heute leisten kannst"
+            : "Günstigste Einstiegsziele · spare Kapital für deine erste Übernahme"}
+      </span>
+      {list.length > 0 && (
+        <ul className="company-offers">
+          {list.map((c) => (
+            <CompanyRow key={c.id} s={s} c={c} />
+          ))}
+        </ul>
+      )}
+      <div className="group-portfolio-heading">
+        <span className="eyebrow">GEWINN DEINER GROUP</span>
+        <h3>{groupName(s.company.name)}</h3>
+      </div>
+      <GroupPortfolio sell />
     </Card>
   );
 }
@@ -253,6 +369,7 @@ export default function MarketView() {
           <p className="hint">Jeder eigene Release sättigt sein Genre ein wenig.</p>
         </Card>
       </div>
+      <AcquisitionsCard s={s} />
       <RivalsCard s={s} />
     </div>
   );

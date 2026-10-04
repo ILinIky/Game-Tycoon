@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   ArrowDown,
   ArrowUpRight,
+  Building2,
   ChevronLeft,
   ChevronRight,
   Crown,
@@ -31,7 +32,9 @@ import {
   worldNeighborhood,
   type RankedCompany,
   type RankingCurrency,
+  type RankingGroup,
 } from "../../game/leaderboard";
+import { groupStats, holdingsOf } from "../../game/market/holdings";
 
 const PAGE_SIZE = 30;
 const sectorNames = [
@@ -62,21 +65,24 @@ function Monogram({
 }) {
   const letters = company.player
     ? "★"
-    : company.name
-        .replace(/[^\p{L}\p{N} ]/gu, "")
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((word) => word[0])
-        .join("")
-        .toUpperCase();
+    : company.group
+      ? "G"
+      : company.name
+          .replace(/[^\p{L}\p{N} ]/gu, "")
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((word) => word[0])
+          .join("")
+          .toUpperCase();
   return (
     <span
       className={`ranking-monogram ${large ? "large" : ""}`}
       style={
         {
-          "--company-color": company.player
-            ? "#ebc88b"
-            : sectorColors[company.sector],
+          "--company-color":
+            company.player || company.group
+              ? "#ebc88b"
+              : sectorColors[company.sector],
         } as CSSProperties
       }
       aria-hidden="true"
@@ -87,9 +93,23 @@ function Monogram({
 }
 
 export default function Leaderboard() {
-  const company = useGame((store) => store.game.company);
+  const game = useGame((store) => store.game);
+  const company = game.company;
   const animated = useStudioMotion();
-  const ranking = useMemo(() => buildRanking(company), [company]);
+  const stats = useMemo(() => groupStats(game), [game]);
+  const group = useMemo<RankingGroup | null>(
+    () =>
+      stats.active
+        ? {
+            name: stats.name,
+            value: stats.value,
+            members: holdingsOf(game).map((h) => h.id),
+          }
+        : null,
+    [stats, game],
+  );
+  const ranking = useMemo(() => buildRanking(company, group), [company, group]);
+  const groupEntry = ranking.find((entry) => entry.group);
   const ownIndex = ranking.findIndex((entry) => entry.player);
   const own = ranking[ownIndex];
   const nextMilestone = WORLD_MILESTONES.find(
@@ -106,9 +126,9 @@ export default function Leaderboard() {
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState("");
   const [country, setCountry] = useState("");
-  const [mode, setMode] = useState<"companies" | "real-near" | "world">(
-    "companies",
-  );
+  const [mode, setMode] = useState<
+    "companies" | "real-near" | "world" | "group"
+  >("companies");
   const nearby = mode !== "companies";
   const setNearby = (enabled: boolean) =>
     setMode(enabled ? "real-near" : "companies");
@@ -130,13 +150,17 @@ export default function Leaderboard() {
   const startNearby = Math.max(0, ownIndex - 3);
   const displayed =
     mode === "world"
-      ? worldNeighborhood(company)
-      : nearby
-        ? ranking.slice(startNearby, ownIndex + 4)
-        : filtered.slice(
-            currentPage * PAGE_SIZE,
-            (currentPage + 1) * PAGE_SIZE,
-          );
+      ? worldNeighborhood(company, group)
+      : mode === "group"
+        ? ranking.filter(
+            (entry) => entry.group || entry.player || entry.memberOf,
+          )
+        : nearby
+          ? ranking.slice(startNearby, ownIndex + 4)
+          : filtered.slice(
+              currentPage * PAGE_SIZE,
+              (currentPage + 1) * PAGE_SIZE,
+            );
   const hasFilters = Boolean(query || sector || country);
   const value = (usd: number, full = false) =>
     formatRankingValue(usd, currency, full);
@@ -163,7 +187,7 @@ export default function Leaderboard() {
         block: "start",
       });
     });
-  const showStudio = (view: "world" | "real-near" = "world") => {
+  const showStudio = (view: "world" | "real-near" | "group" = "world") => {
     reset();
     setMode(view);
     requestAnimationFrame(() => {
@@ -245,7 +269,11 @@ export default function Leaderboard() {
               {value(entry.valueUsd)}
             </strong>
             <span className="podium-caption">
-              {entry.player ? "Simulierter Firmenwert" : "Börsenwert"}
+              {entry.player
+                ? "Simulierter Firmenwert"
+                : entry.group
+                  ? "Simulierter Gruppenwert"
+                  : "Börsenwert"}
             </span>
           </motion.article>
         ))}
@@ -334,6 +362,48 @@ export default function Leaderboard() {
           )}
         </div>
       </section>
+      {groupEntry && (
+        <section
+          className="ranking-group-card"
+          aria-label="Deine Group im Weltvergleich"
+        >
+          <Monogram company={groupEntry} large />
+          <div className="ranking-group-identity">
+            <span className="ranking-kicker">
+              <Building2 size={12} /> DEINE UNTERNEHMENSGRUPPE
+            </span>
+            <h2>
+              {groupEntry.name}
+              <span className="ranking-you">GROUP</span>
+            </h2>
+            <small>
+              {stats.companies} übernommene Unternehmen · Studio, Tochterstudios
+              und Beteiligungen
+            </small>
+          </div>
+          <div className="ranking-group-figures">
+            <span>
+              <small>Gruppenwert</small>
+              <strong title={value(groupEntry.valueUsd, true)}>
+                {value(groupEntry.valueUsd)}
+              </strong>
+            </span>
+            <span>
+              <small>Firmenvergleich</small>
+              <strong>#{groupEntry.rank}</strong>
+            </span>
+            <span>
+              <small>Weltrang</small>
+              <strong>
+                {formatWorldRank(estimatedWorldRank(groupEntry.valueUsd))}
+              </strong>
+            </span>
+          </div>
+          <button onClick={() => showStudio("group")}>
+            <Target size={13} /> Meine Group <ArrowDown size={12} />
+          </button>
+        </section>
+      )}
       <p className="ranking-scope">
         Weltrang = gerundetes Spielweltmodell. Firmenvergleich = Platz unter{" "}
         {realCompanies.length} echten Börsenunternehmen. Dein Firmenwert ist
@@ -438,13 +508,23 @@ export default function Leaderboard() {
             >
               Um mein Studio
             </button>
+            {groupEntry && (
+              <button
+                aria-pressed={mode === "group"}
+                onClick={() => showStudio("group")}
+              >
+                Meine Group
+              </button>
+            )}
           </div>
           <span role="status">
             {mode === "world"
               ? "Modellstufen · keine realen Firmen"
-              : nearby
-                ? "Dein Platz & die nächsten Rivalen"
-                : `${filtered.length} ${hasFilters ? "Treffer" : "Einträge"}`}
+              : mode === "group"
+                ? `${stats.name} · Studio & Beteiligungen`
+                : nearby
+                  ? "Dein Platz & die nächsten Rivalen"
+                  : `${filtered.length} ${hasFilters ? "Treffer" : "Einträge"}`}
           </span>
           {hasFilters && (
             <button className="ranking-reset" onClick={reset}>
@@ -481,7 +561,15 @@ export default function Leaderboard() {
                 <tr
                   key={entry.id}
                   ref={entry.player ? playerRow : undefined}
-                  className={entry.player ? "ranking-own-row" : ""}
+                  className={
+                    entry.player
+                      ? "ranking-own-row"
+                      : entry.group
+                        ? "ranking-own-row ranking-group-row"
+                        : entry.memberOf
+                          ? "ranking-member-row"
+                          : ""
+                  }
                 >
                   <td className="ranking-place">
                     {entry.rank <= 3 ? <Crown size={14} /> : null}
@@ -500,13 +588,27 @@ export default function Leaderboard() {
                           {entry.player && (
                             <span className="ranking-you">DU</span>
                           )}
+                          {entry.group && (
+                            <span className="ranking-you">GROUP</span>
+                          )}
+                          {entry.memberOf && (
+                            <span
+                              className="ranking-group-badge"
+                              title={`Gehört zur ${entry.memberOf}`}
+                            >
+                              <Building2 size={10} />
+                              {entry.memberOf}
+                            </span>
+                          )}
                         </strong>
                         <small>
                           {entry.player
                             ? "Simulierter Wert"
-                            : entry.model
-                              ? "Modellstufe · angenommener Wert"
-                              : `${entry.ticker} · ${countryLabel(entry.country)}`}
+                            : entry.group
+                              ? `Simulierter Gruppenwert · ${stats.companies} Unternehmen`
+                              : entry.model
+                                ? "Modellstufe · angenommener Wert"
+                                : `${entry.ticker} · ${countryLabel(entry.country)}`}
                           <span className="ranking-mobile-sector">
                             {" "}
                             · {entry.sector}
@@ -526,7 +628,7 @@ export default function Leaderboard() {
                     <strong title={value(entry.valueUsd, true)}>
                       {value(entry.valueUsd)}
                     </strong>
-                    {!entry.player && !entry.model && (
+                    {!entry.player && !entry.model && !entry.group && (
                       <a
                         href={entry.sourceUrl}
                         target="_blank"

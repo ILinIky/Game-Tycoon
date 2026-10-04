@@ -2,25 +2,37 @@ import type { Employee, GameState, Recruitment } from "../types";
 import { BALANCE, OFFICES } from "../config/balance";
 import { clamp, random, uid } from "../utils";
 import { notify } from "../events/events";
-import { marketScale } from "../economy/scale";
+import { marketScale, nice } from "../economy/scale";
+import { fairSalary } from "./perks";
+/** Price of an immediate search through a headhunter. */
+export const headhuntCost = (budget: number) =>
+  Math.round(budget * BALANCE.headhuntFactor);
+
+/**
+ * Starts a job advert. With `instant`, a headhunter presents the
+ * candidates at once for a higher fee.
+ */
 export function recruit(
   s: GameState,
   role: Recruitment["role"],
   seniority: Recruitment["seniority"],
   budget: number,
+  instant = false,
 ) {
-  if (s.recruitment || s.company.cash < budget || s.company.bankrupt)
+  const cost = instant ? headhuntCost(budget) : budget;
+  if (s.recruitment || s.company.cash < cost || s.company.bankrupt)
     throw new Error(
       "Recruiting ist bereits aktiv oder das Budget reicht nicht.",
     );
-  s.company.cash -= budget;
-  s.finances.at(-1)!.expenses += budget;
+  s.company.cash -= cost;
+  s.finances.at(-1)!.expenses += cost;
   s.recruitment = {
     role,
     seniority,
     budget,
     remaining: BALANCE.recruitmentDays,
   };
+  if (instant) candidates(s);
 }
 export function candidates(s: GameState) {
   const job = s.recruitment;
@@ -35,7 +47,7 @@ export function candidates(s: GameState) {
     "Emil Santos",
     "Toni Fischer",
   ];
-  s.candidates = Array.from({ length: 3 }, (_, i) => {
+  s.candidates = Array.from({ length: BALANCE.candidates }, (_, i) => {
     const base = job.seniority === "Senior" ? 58 : 32;
     const boost = job.budget / (160 * marketScale(s));
     const skills = {
@@ -57,7 +69,7 @@ export function candidates(s: GameState) {
             ? "art"
             : "audio";
     skills[key] = clamp(skills[key] + boost);
-    return {
+    const candidate: Employee = {
       id: uid(s, "employee"),
       name: names[(Math.floor(random(s) * names.length) + i) % names.length],
       role: job.role,
@@ -85,12 +97,18 @@ export function candidates(s: GameState) {
         ] as const
       )[Math.floor(random(s) * 5)],
     };
+    // New hires start at market value, so they are not unhappy on day one.
+    candidate.salary = Math.max(
+      candidate.salary,
+      nice(fairSalary(candidate, s) * 0.95),
+    );
+    return candidate;
   });
   s.recruitment = null;
   notify(
     s,
     "Neue Talente sind da",
-    "Drei Kandidaten warten auf deine Entscheidung.",
+    `${BALANCE.candidates} Kandidaten warten auf deine Entscheidung.`,
     "success",
   );
 }
