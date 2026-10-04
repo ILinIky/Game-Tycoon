@@ -89,6 +89,8 @@ export interface GameProject {
   priceFactor?: number;
   /** Automatic marketing during development. */
   marketing?: MarketingPlan;
+  /** Optional production features (see GAME_FEATURES). */
+  features?: string[];
   /** Automatic campaigns already handled for this project. */
   campaigns?: number;
   /** Snapshot of the production queue settings used to start this game. */
@@ -197,6 +199,10 @@ export interface TechEffects {
   labSpeed?: number;
   /** Engine level contributed when building a framework. */
   engine?: number;
+  /** Extra net revenue per sale as fraction (store deals, live service). */
+  revenue?: number;
+  /** Extra profit of subsidiaries and holdings as fraction. */
+  income?: number;
 }
 export type TechBranch =
   | "graphics"
@@ -205,12 +211,13 @@ export type TechBranch =
   | "production"
   | "network"
   | "business"
+  | "live"
   | "programs";
 export interface Technology {
   id: string;
   name: string;
   category: TechBranch;
-  tier: 1 | 2 | 3 | 4;
+  tier: 1 | 2 | 3 | 4 | 5 | 6;
   points: number;
   cost: number;
   days: number;
@@ -403,7 +410,8 @@ export interface ResearchLab {
   focus: ResearchFocus;
 }
 export interface Recruitment {
-  role: Role;
+  /** "Mix" searches all disciplines at once. */
+  role: Role | "Mix";
   remaining: number;
   seniority: "Junior" | "Senior";
   budget: number;
@@ -474,4 +482,5 @@ export type ProjectInput = Pick<
   | "publisher"
   | "priceFactor"
   | "marketing"
+  | "features"
 >;

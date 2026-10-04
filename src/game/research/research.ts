@@ -52,6 +52,8 @@ export function techEffects(s: GameState): Totals {
     research: 0,
     labSpeed: 0,
     engine: 0,
+    revenue: 0,
+    income: 0,
     genres: {},
   };
   for (const t of TECHNOLOGIES) {
@@ -69,9 +71,11 @@ export function techEffects(s: GameState): Totals {
     ][])
       total.genres[genre] = (total.genres[genre] ?? 0) + value * level;
   }
-  total.speed = Math.min(total.speed, 0.45);
-  total.cost = Math.min(total.cost, 0.35);
+  total.speed = Math.min(total.speed, 0.55);
+  total.cost = Math.min(total.cost, 0.45);
   total.bugs = Math.min(total.bugs, 0.6);
+  total.revenue = Math.min(total.revenue, 1);
+  total.income = Math.min(total.income, 1);
   return total;
 }
 

@@ -2052,3 +2052,101 @@
     grid-column: 2;
   }
 }
+
+/* ---------- Team: Entlassen ---------- */
+.employee-fire {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: var(--ft-muted);
+}
+.employee-fire > span {
+  flex: 1;
+  line-height: 1.35;
+}
+.employee-fire .employee-fire-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ft-muted);
+  font-size: 10.5px;
+}
+.employee-fire .employee-fire-open:hover {
+  color: var(--ft-red);
+}
+.game-root .employee-fire .button {
+  min-height: 48px;
+}
+.game-root .button.danger:not(.secondary),
+.game-root .button.danger {
+  background: #b9614a;
+  border-color: #d98a72;
+  color: #fff3e8;
+}
+
+/* ---------- Produktionsplan: Extras ---------- */
+.feature-options {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.choice.feature-choice {
+  text-align: left;
+}
+.choice.feature-choice strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.choice.feature-choice em {
+  display: block;
+  margin-top: 6px;
+  font-style: normal;
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--ft-gold);
+}
+@media (max-width: 720px) {
+  .feature-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .employee-fire {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- Team-Leiste & Produktionsliste ---------- */
+.studio-team.team-dock .team-hire {
+  align-self: center;
+}
+/* Laufende Entwicklungen schweben mit Abstand über der Teamleiste. */
+.production-dock {
+  bottom: 218px;
+}
+@media (max-height: 760px) and (min-width: 721px) {
+  .production-dock {
+    bottom: 206px;
+  }
+}
+@media (max-height: 550px) and (min-width: 721px) {
+  .production-dock {
+    bottom: 180px;
+  }
+}
+@media (max-width: 720px) {
+  .production-dock {
+    bottom: 162px;
+  }
+  .studio-team.team-dock {
+    max-width: calc(100vw - 24px);
+  }
+  .studio-team.team-dock .team-hire {
+    height: 30px;
+    padding: 0 8px;
+  }
+  .team-dock .team-members {
+    padding: 0 3px;
+    gap: 3px;
+  }
+}

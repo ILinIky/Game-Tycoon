@@ -1,7 +1,8 @@
-import { AlertTriangle, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, Sparkles, UserMinus, Zap } from "lucide-react";
 import {
   fairSalary,
   perkById,
+  severancePay,
   unrestReasons,
 } from "../../game/employees/perks";
 import { headhuntCost } from "../../game/employees/recruiting";
@@ -35,7 +36,8 @@ function EmployeeCard({
   employee: Employee;
   candidate?: boolean;
 }) {
-  const { game: s, hire, train, adjustSalary } = useGame();
+  const { game: s, hire, train, adjustSalary, fire } = useGame();
+  const [confirmFire, setConfirmFire] = useState(false);
   const busy = isWorking(s, e.id);
   const full = s.employees.length >= OFFICES[s.company.office].capacity;
   const fair = fairSalary(e, s);
@@ -117,6 +119,34 @@ function EmployeeCard({
           {candidate ? (full ? "Büro voll" : "Einstellen") : "Training"}
         </Button>
       </div>
+      {!candidate && e.role !== "Gründer" && (
+        <div className="employee-fire">
+          {confirmFire ? (
+            <>
+              <span>
+                {e.name} wirklich entlassen? Abfindung: ein Monatsgehalt.
+              </span>
+              <Button secondary onClick={() => setConfirmFire(false)}>
+                Behalten
+              </Button>
+              <Button
+                className="danger"
+                detail={money(severancePay(e))}
+                onClick={() => fire(e.id)}
+              >
+                Entlassen
+              </Button>
+            </>
+          ) : (
+            <button
+              className="text-button employee-fire-open"
+              onClick={() => setConfirmFire(true)}
+            >
+              <UserMinus size={13} /> Entlassen
+            </button>
+          )}
+        </div>
+      )}
       {(underpaid || (reasons.length > 0 && e.loyalty < 50)) && (
         <div className="employee-unrest" role="status">
           <span>
@@ -140,7 +170,7 @@ function EmployeeCard({
 export default function EmployeesView() {
   const store = useGame();
   const s = store.game;
-  const [role, setRole] = useState<Role>("Programmierung");
+  const [role, setRole] = useState<Role | "Mix">("Programmierung");
   const [seniority, setSeniority] = useState<"Junior" | "Senior">("Junior");
   const budgets = recruitBudgets(s);
   const [chosenBudget, setBudget] = useState(0);
@@ -164,14 +194,21 @@ export default function EmployeesView() {
             <GameSelect
               label="Rolle"
               value={role}
-              onChange={(value) => setRole(value as Role)}
+              onChange={(value) => setRole(value as Role | "Mix")}
               options={[
-                "Programmierung",
-                "Game Design",
-                "Art",
-                "Audio",
-                "QA",
-              ].map((value) => ({ value, label: value }))}
+                {
+                  value: "Mix",
+                  label: "Gemischt (Zufall)",
+                  description: "Je ein Talent aus verschiedenen Bereichen",
+                },
+                ...[
+                  "Programmierung",
+                  "Game Design",
+                  "Art",
+                  "Audio",
+                  "QA",
+                ].map((value) => ({ value, label: value })),
+              ]}
             />
           </label>
           <label>

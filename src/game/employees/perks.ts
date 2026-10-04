@@ -2,6 +2,7 @@ import type { Employee, GameProject, GameState, Skill } from "../types";
 import { clamp, random } from "../utils";
 import { notify } from "../events/events";
 import { BALANCE } from "../config/balance";
+import { facilityEffects } from "../office/office";
 import { marketScale, nice } from "../economy/scale";
 
 export interface Perk {
@@ -99,7 +100,9 @@ export function loyaltyTick(s: GameState) {
     const underpaid = e.salary < fairSalary(e, s) * 0.85 ? 15 : 0;
     const target =
       55 + (e.motivation - 60) * 0.5 - Math.max(0, e.stress - 50) * 0.6 - underpaid + (e.perk ? -5 : 0);
-    e.loyalty = clamp(e.loyalty + (target - e.loyalty) * 0.15);
+    e.loyalty = clamp(
+      e.loyalty + (target - e.loyalty) * 0.15 + facilityEffects(s).loyalty,
+    );
     // Staff ask for a raise first, before rivals get a chance.
     const recentRequest = s.events.some(
       (ev) => ev.target === e.id && ev.title === "Gehaltswunsch" && s.day - ev.day < SALARY_REQUEST_COOLDOWN,
@@ -141,6 +144,24 @@ export function dismiss(s: GameState, id: string) {
   if (s.engineProject) s.engineProject.team = s.engineProject.team.filter((m) => m !== id);
   for (const c of s.contracts.active) c.team = c.team.filter((m) => m !== id);
   closeDecisions(s, id);
+}
+
+/** Severance for letting an employee go: one monthly salary. */
+export const severancePay = (e: Employee) => e.salary;
+
+/** Lets an employee go; the rest of the team is a little unsettled. */
+export function fireEmployee(s: GameState, id: string) {
+  const e = s.employees.find((x) => x.id === id);
+  if (!e) throw new Error("Mitarbeiter nicht gefunden.");
+  if (e.role === "Gründer") throw new Error("Den Gründer kannst du nicht entlassen.");
+  const pay = severancePay(e);
+  if (s.company.cash < pay) throw new Error("Für die Abfindung fehlt Kapital.");
+  s.company.cash -= pay;
+  s.finances.at(-1)!.expenses += pay;
+  dismiss(s, id);
+  for (const other of s.employees)
+    if (other.role !== "Gründer") other.motivation = clamp(other.motivation - 3);
+  notify(s, "Trennung", `${e.name} verlässt das Studio (Abfindung ${pay.toLocaleString("de-DE")} €).`, "info");
 }
 
 /** Closes all open salary and poaching decisions of an employee. */

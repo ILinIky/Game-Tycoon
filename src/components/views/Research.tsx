@@ -14,6 +14,7 @@ import {
   Lightbulb,
   Lock,
   Megaphone,
+  Radio,
   Music,
   Palette,
   Sparkles,
@@ -64,13 +65,14 @@ const BRANCH_ICONS: Record<TechBranch, LucideIcon> = {
   production: Wrench,
   network: Globe,
   business: Megaphone,
+  live: Radio,
   programs: InfinityIcon,
 };
 const TREE_BRANCHES = (Object.keys(TECH_BRANCHES) as TechBranch[]).filter(
   (b) => b !== "programs",
 );
-const TIERS = [1, 2, 3, 4] as const;
-const ROMAN = ["I", "II", "III", "IV"];
+const TIERS = [1, 2, 3, 4, 5, 6] as const;
+const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 const STATUS_LABEL: Record<TechStatus, string> = {
   done: "Erforscht",
   maxed: "Maximal",
@@ -101,6 +103,8 @@ function effectLines(e: TechEffects) {
   add(e.research, (v) => `+${pct(v)} Forschungspunkte`);
   add(e.labSpeed, (v) => `+${pct(v)} Forschungstempo`);
   add(e.engine, (v) => `+${v} Engine-Level für neue Frameworks`);
+  add(e.revenue, (v) => `+${pct(v)} Umsatz pro Verkauf`);
+  add(e.income, (v) => `+${pct(v)} Gewinn aus Töchtern und Beteiligungen`);
   return lines;
 }
 

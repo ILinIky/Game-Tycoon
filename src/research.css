@@ -382,7 +382,7 @@
 }
 .research-view .tech-cells {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
 }
 .research-view .tech-tiers > span {
@@ -877,5 +877,21 @@
   }
   .research-view .tech-cells .tech-cell {
     display: contents;
+  }
+}
+
+/* Six tiers: the tree scrolls sideways instead of squeezing node names. */
+.research-view .tech-tree {
+  overflow-x: auto;
+}
+.research-view .tech-tree > * {
+  min-width: 780px;
+}
+.research-view .tech-node strong {
+  hyphens: auto;
+}
+@media (max-width: 720px) {
+  .research-view .tech-tree > * {
+    min-width: 0;
   }
 }

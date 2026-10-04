@@ -15,6 +15,7 @@ import {
 } from "../config/balance";
 import { PRICE_STEPS } from "./pricing";
 import { MARKETING_KEYS } from "../marketing/campaigns";
+import { validFeatures } from "../config/features";
 import { isAssigned } from "../employees/assignment";
 import { isAvailable } from "../market/platforms";
 import { resolvePublisher } from "../contracts/contracts";
@@ -65,7 +66,8 @@ export function validQueuedInput(v: unknown): v is ProjectInput {
     (v.priceFactor !== undefined &&
       !PRICE_STEPS.includes(v.priceFactor as number)) ||
     (v.marketing !== undefined &&
-      !MARKETING_KEYS.includes(v.marketing as MarketingPlan))
+      !MARKETING_KEYS.includes(v.marketing as MarketingPlan)) ||
+    !validFeatures(v.features)
   )
     return false;
   if (v.publisher !== undefined) {

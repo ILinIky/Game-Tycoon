@@ -1,4 +1,5 @@
-import type { Employee, GameState, Recruitment } from "../types";
+import type { Employee, GameState, Recruitment, Role } from "../types";
+import { facilityEffects } from "../office/office";
 import { BALANCE, OFFICES } from "../config/balance";
 import { clamp, random, uid } from "../utils";
 import { notify } from "../events/events";
@@ -34,6 +35,15 @@ export function recruit(
   };
   if (instant) candidates(s);
 }
+/** Disciplines of a mixed search. */
+export const MIX_ROLES: Role[] = [
+  "Programmierung",
+  "Game Design",
+  "Art",
+  "Audio",
+  "QA",
+];
+
 export function candidates(s: GameState) {
   const job = s.recruitment;
   if (!job) return;
@@ -47,8 +57,15 @@ export function candidates(s: GameState) {
     "Emil Santos",
     "Toni Fischer",
   ];
+  const mixStart = Math.floor(random(s) * MIX_ROLES.length);
   s.candidates = Array.from({ length: BALANCE.candidates }, (_, i) => {
-    const base = job.seniority === "Senior" ? 58 : 32;
+    // A mixed search brings one talent per discipline, in random order.
+    const role: Role =
+      job.role === "Mix"
+        ? MIX_ROLES[(mixStart + i) % MIX_ROLES.length]
+        : job.role;
+    const base =
+      (job.seniority === "Senior" ? 58 : 32) + facilityEffects(s).recruit;
     const boost = job.budget / (160 * marketScale(s));
     const skills = {
       programming: base + random(s) * 20,
@@ -61,18 +78,18 @@ export function candidates(s: GameState) {
       research: base + random(s) * 20,
     };
     const key =
-      job.role === "Programmierung" || job.role === "QA"
+      role === "Programmierung" || role === "QA"
         ? "programming"
-        : job.role === "Game Design"
+        : role === "Game Design"
           ? "design"
-          : job.role === "Art"
+          : role === "Art"
             ? "art"
             : "audio";
     skills[key] = clamp(skills[key] + boost);
     const candidate: Employee = {
       id: uid(s, "employee"),
       name: names[(Math.floor(random(s) * names.length) + i) % names.length],
-      role: job.role,
+      role,
       skills: Object.fromEntries(
         Object.entries(skills).map(([k, v]) => [k, Math.round(v)]),
       ) as Employee["skills"],

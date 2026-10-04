@@ -31,6 +31,12 @@ export function facilityEffects(s: GameState): Totals {
     research: 0,
     campaign: 0,
     fans: 0,
+    quality: 0,
+    hype: 0,
+    sales: 0,
+    morale: 0,
+    loyalty: 0,
+    recruit: 0,
     focus: {},
   };
   for (const id of s.facilities) {

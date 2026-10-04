@@ -6,7 +6,8 @@ import type { GameState } from "../types";
 import { recordSales, salesFade, salesLifetime } from "./salesHistory";
 import { lab, techEffects } from "../research/research";
 import { marketScale, scaled } from "./scale";
-import { facilityUpkeep, officeRent } from "../office/office";
+import { facilityEffects, facilityUpkeep, officeRent } from "../office/office";
+import { featureEffects } from "../config/features";
 export function monthlyCosts(s: GameState) {
   return (
     officeRent(s) +
@@ -20,6 +21,7 @@ export function monthlyCosts(s: GameState) {
 export function sales(s: GameState) {
   let revenue = 0;
   const tech = techEffects(s);
+  const facility = facilityEffects(s);
   const market = marketScale(s);
   // Fans help logarithmically so big studios do not snowball endlessly.
   const fanFactor = 1 + Math.log10(1 + s.company.fans / 500) * 0.2;
@@ -59,11 +61,16 @@ export function sales(s: GameState) {
           seriesSales(g) *
           salesFade(g, s.day) *
           (g.patched ? 1.1 : 1) *
-          (1 + tech.sales),
+          (1 + tech.sales + facility.sales) *
+          featureEffects(g).sales,
       ),
     );
     const earned =
-      units * effectivePrice(g, s.day) * 0.7 * (1 - (g.publisher?.share ?? 0));
+      units *
+      effectivePrice(g, s.day) *
+      0.7 *
+      (1 + tech.revenue) *
+      (1 - (g.publisher?.share ?? 0));
     recordSales(g, s.day, units, earned);
     g.units += units;
     g.revenue += earned;

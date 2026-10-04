@@ -449,6 +449,20 @@ function facilityProp(
       [p.point(x + 0.27, y + 0.37, 120), p.point(x - 0.05, y + 0.1, 30), p.point(x + 0.55, y + 0.65, 30)],
       `rgba(255,236,190,${0.1 + Math.sin(t * 2) * 0.03})`,
     );
+  } else {
+    // Later facilities share a cabinet with a glowing display.
+    const hue = [...id].reduce((n, c) => n + c.charCodeAt(0), 0) % 360;
+    p.box(x, y, 0.5, 0.75, 0, 46, ["#4a5a60", "#2c383d", "#3a474c"]);
+    p.polygon(
+      [
+        p.point(x + 0.505, y + 0.12, 18),
+        p.point(x + 0.505, y + 0.62, 18),
+        p.point(x + 0.505, y + 0.62, 40),
+        p.point(x + 0.505, y + 0.12, 40),
+      ],
+      `hsl(${hue} 45% ${52 + Math.sin(t * 2 + hue) * 6}%)`,
+    );
+    p.ellipse(p.point(x + 0.25, y + 0.37, 52), 5, 5, `hsl(${hue} 55% 70%)`);
   }
 }
 function desk(
@@ -774,7 +788,7 @@ export function renderStudio(
   c.fillStyle = glow;
   c.fillRect(0, 0, w, h);
   const level = s.company.office;
-  const cols = [2, 3, 4, 6, 8, 10][level] ?? 10;
+  const cols = [2, 3, 4, 6, 8, 10, 10, 10][level] ?? 10;
   const slots = OFFICES[level].capacity;
   const rows = Math.ceil(slots / cols);
   const rw = Math.max(7, cols * 2.05 + 1),

@@ -3,6 +3,7 @@ import { studioValuation } from "../economy/valuation";
 import { notify } from "../events/events";
 import { clamp, random } from "../utils";
 import { scaled } from "../economy/scale";
+import { techEffects } from "../research/research";
 
 /** A company that can be bought, with its market value in euros. */
 export interface CompanyOffer {
@@ -100,11 +101,16 @@ export function sellCompany(s: GameState, id: string) {
   );
 }
 
+/** Profit bonus of subsidiaries and holdings from research. */
+export const incomeBonus = (s: GameState) => 1 + techEffects(s).income;
+
 /** Pays the monthly profit of all holdings (±15 % per month); returns the total. */
 export function payHoldings(s: GameState) {
   let total = 0;
   for (const h of holdingsOf(s)) {
-    const income = Math.round(monthlyProfit(h) * (0.85 + random(s) * 0.3));
+    const income = Math.round(
+      monthlyProfit(h) * incomeBonus(s) * (0.85 + random(s) * 0.3),
+    );
     h.earned += income;
     h.lastIncome = income;
     total += income;
@@ -130,10 +136,12 @@ export function groupStats(s: GameState) {
     (n, x) => n + subsidiaryValue(s, x.income),
     0,
   );
-  const holdingsIncome = holdings.reduce((n, h) => n + monthlyProfit(h), 0);
-  const subsidiariesIncome = s.subsidiaries.reduce(
-    (n, x) => n + scaled(s, x.income),
-    0,
+  const bonus = incomeBonus(s);
+  const holdingsIncome = Math.round(
+    holdings.reduce((n, h) => n + monthlyProfit(h), 0) * bonus,
+  );
+  const subsidiariesIncome = Math.round(
+    s.subsidiaries.reduce((n, x) => n + scaled(s, x.income), 0) * bonus,
   );
   return {
     name: groupName(s.company.name),

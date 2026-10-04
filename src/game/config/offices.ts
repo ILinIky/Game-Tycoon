@@ -50,6 +50,22 @@ export const OFFICES = [
     slots: 6,
     subtitle: "Die Skyline trägt deinen Namen.",
   },
+  {
+    name: "Entertainment-Park",
+    capacity: 90,
+    rent: 260000,
+    cost: 80000000,
+    slots: 9,
+    subtitle: "Ein eigenes Viertel für Ideen, Bühnen und Labore.",
+  },
+  {
+    name: "Konzernzentrale",
+    capacity: 100,
+    rent: 600000,
+    cost: 300000000,
+    slots: 12,
+    subtitle: "Das Herz eines weltweiten Unterhaltungskonzerns.",
+  },
 ];
 
 export interface FacilityEffects {
@@ -71,6 +87,18 @@ export interface FacilityEffects {
   campaign?: number;
   /** Fan gain bonus on release as fraction. */
   fans?: number;
+  /** Flat quality bonus for every game. */
+  quality?: number;
+  /** Starting hype for new projects. */
+  hype?: number;
+  /** Sales bonus as fraction. */
+  sales?: number;
+  /** Daily motivation gain of every employee. */
+  morale?: number;
+  /** Monthly loyalty gain of every employee. */
+  loyalty?: number;
+  /** Skill bonus of new candidates. */
+  recruit?: number;
   /** Quality bonus for games with a matching design focus. */
   focus?: { focus: NonNullable<GameProject["designFocus"]>; quality: number };
 }
@@ -167,5 +195,113 @@ export const FACILITIES: Facility[] = [
     upkeep: 1100,
     office: 2,
     effects: { campaign: 0.4, fans: 0.15 },
+  },
+  {
+    id: "canteen",
+    name: "Kantine",
+    description: "Frisches Essen für alle: Motivation steigt täglich, +3 Loyalität pro Monat.",
+    cost: 30000,
+    upkeep: 700,
+    office: 1,
+    effects: { morale: 0.04, loyalty: 3 },
+  },
+  {
+    id: "scouting",
+    name: "Talent-Scouting",
+    description: "Eigene Scouts auf Messen und Unis: Kandidaten mit +8 Fähigkeiten.",
+    cost: 50000,
+    upkeep: 1000,
+    office: 2,
+    effects: { recruit: 8 },
+  },
+  {
+    id: "gym",
+    name: "Fitness & Spa",
+    description: "Sport, Sauna, Ruheräume: 20 % weniger Stress, 30 % weniger Energieverlust.",
+    cost: 70000,
+    upkeep: 1300,
+    office: 2,
+    effects: { stress: 0.2, energy: 0.3 },
+  },
+  {
+    id: "people",
+    name: "People & Culture",
+    description: "Karrierepfade und Feedback: +5 Loyalität pro Monat, +20 % Lerntempo.",
+    cost: 90000,
+    upkeep: 1600,
+    office: 3,
+    effects: { loyalty: 5, learning: 0.2 },
+  },
+  {
+    id: "mocap",
+    name: "Motion-Capture-Studio",
+    description: "Echte Darsteller im Anzug: +2 Qualität für alle Spiele.",
+    cost: 250000,
+    upkeep: 4500,
+    office: 3,
+    effects: { quality: 2 },
+  },
+  {
+    id: "datacenter",
+    name: "Rechenzentrum",
+    description: "Eigene Server-Farm: 15 % weniger Bugs, +5 % Tempo.",
+    cost: 300000,
+    upkeep: 6000,
+    office: 3,
+    effects: { bugs: 0.15, speed: 0.05 },
+  },
+  {
+    id: "agency",
+    name: "Marketing-Agentur",
+    description: "Hauseigene Kreativagentur: +8 Start-Hype, +30 % Kampagnen-Hype.",
+    cost: 400000,
+    upkeep: 7000,
+    office: 4,
+    effects: { hype: 8, campaign: 0.3 },
+  },
+  {
+    id: "innovation",
+    name: "Innovationslabor",
+    description: "Prototypen-Teams: +35 % Forschungspunkte, +20 % Lerntempo.",
+    cost: 500000,
+    upkeep: 8000,
+    office: 4,
+    effects: { research: 0.35, learning: 0.2 },
+  },
+  {
+    id: "cinema",
+    name: "Premierenkino",
+    description: "Weltpremieren für Presse und Fans: +5 % Verkäufe, +25 % Fans.",
+    cost: 900000,
+    upkeep: 12000,
+    office: 5,
+    effects: { sales: 0.05, fans: 0.25 },
+  },
+  {
+    id: "arena",
+    name: "E-Sport-Arena",
+    description: "Eigene Turniere: +8 % Verkäufe, +5 Start-Hype, +30 % Fans.",
+    cost: 3000000,
+    upkeep: 35000,
+    office: 6,
+    effects: { sales: 0.08, hype: 5, fans: 0.3 },
+  },
+  {
+    id: "museum",
+    name: "Spielemuseum",
+    description: "Deine Geschichte zum Anfassen: +1 Qualität, +6 % Verkäufe, +20 % Fans.",
+    cost: 5000000,
+    upkeep: 50000,
+    office: 6,
+    effects: { quality: 1, sales: 0.06, fans: 0.2 },
+  },
+  {
+    id: "aicore",
+    name: "KI-Kompetenzzentrum",
+    description: "Eigene KI-Werkzeuge: +2 Qualität, +8 % Tempo, +20 % Forschung.",
+    cost: 12000000,
+    upkeep: 120000,
+    office: 7,
+    effects: { quality: 2, speed: 0.08, research: 0.2 },
   },
 ];

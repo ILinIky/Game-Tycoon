@@ -46,6 +46,7 @@ import { money } from "../game/utils";
 import { projectCost, projectDuration } from "../game/projects/projects";
 import { engineBonus, isAssigned } from "../game/engines/engines";
 import { DESIGN_FOCUS, AMBITIONS } from "../game/config/design";
+import { GAME_FEATURES } from "../game/config/features";
 import { Modal, Button, Badge } from "./ui";
 import GameSelect from "./game/GameSelect";
 import { applyProductionPreset } from "../game/projects/presets";
@@ -104,6 +105,7 @@ export default function ProjectWizard({
     sequelOf: initialSequel?.eligible ? initialSequel.base.id : undefined,
     priceFactor: 1,
     marketing: "basic",
+    features: [],
   });
   const sequel = input.sequelOf ? sequelPlan(s, input.sequelOf) : null;
   // Only the newest entry of each series can be continued.
@@ -269,6 +271,9 @@ export default function ProjectWizard({
                   {s.engines.find((engine) => engine.id === plan.engine)?.name}{" "}
                   · Preis {priceLevel(plan.priceFactor).label} ·{" "}
                   {MARKETING_PLANS[plan.marketing ?? "none"].label}
+                  {plan.features?.length
+                    ? ` · ${plan.features.length} Extras`
+                    : ""}
                   <br />
                   {plan.platforms
                     .map(
@@ -585,6 +590,51 @@ export default function ProjectWizard({
                 riskieren einen Abzug. Dein Designschwerpunkt bestimmt, welche
                 Fähigkeiten besonders zählen.
               </p>
+              <label>Produktionsextras</label>
+              <div className="design-options feature-options">
+                {GAME_FEATURES.map((feature) => {
+                  const on = input.features?.includes(feature.id) ?? false;
+                  const parts = [
+                    `+${Math.round((feature.cost - 1) * 100)} % Budget`,
+                    feature.days > 1
+                      ? `+${Math.round((feature.days - 1) * 100)} % Zeit`
+                      : "",
+                    feature.sales > 1
+                      ? `+${Math.round((feature.sales - 1) * 100)} % Verkäufe`
+                      : "",
+                    feature.quality ? `+${feature.quality} Qualität` : "",
+                    feature.hype ? `+${feature.hype} Hype` : "",
+                    feature.bugs < 1
+                      ? `−${Math.round((1 - feature.bugs) * 100)} % Bugs`
+                      : feature.bugs > 1
+                        ? `+${Math.round((feature.bugs - 1) * 100)} % Bugs`
+                        : "",
+                  ].filter(Boolean);
+                  return (
+                    <button
+                      key={feature.id}
+                      className={`choice feature-choice ${on ? "selected" : ""}`}
+                      aria-pressed={on}
+                      onClick={() =>
+                        update(
+                          "features",
+                          on
+                            ? (input.features ?? []).filter(
+                                (id) => id !== feature.id,
+                              )
+                            : [...(input.features ?? []), feature.id],
+                        )
+                      }
+                    >
+                      <strong>
+                        {on && <Check size={13} />} {feature.name}
+                      </strong>
+                      <small>{feature.description}</small>
+                      <em>{parts.join(" · ")}</em>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
           {step === 2 && (

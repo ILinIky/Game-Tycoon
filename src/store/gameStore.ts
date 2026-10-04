@@ -10,6 +10,7 @@ import {
 } from "../game/market/holdings";
 import {
   adjustSalary,
+  fireEmployee,
   resolvePoach,
   resolveSalary,
   resolveTeamRaise,
@@ -82,13 +83,14 @@ type Store = {
   pauseQueue: (paused: boolean) => void;
   release: (id: string) => void;
   recruit: (
-    role: Role,
+    role: Role | "Mix",
     seniority: "Junior" | "Senior",
     budget: number,
     instant?: boolean,
   ) => void;
   hire: (id: string) => void;
   adjustSalary: (id: string) => void;
+  fire: (id: string) => void;
   research: (id: string) => void;
   cancelResearch: (id: string) => void;
   researchFocus: (focus: ResearchFocus) => void;
@@ -207,6 +209,7 @@ export const useGame = create<Store>((set, get) => {
       change((s) => recruit(s, role, seniority, budget, instant)),
     hire: (id) => change((s) => hire(s, id)),
     adjustSalary: (id) => change((s) => adjustSalary(s, id)),
+    fire: (id) => change((s) => fireEmployee(s, id)),
     research: (id) => change((s) => startResearch(s, id)),
     cancelResearch: (id) => change((s) => cancelResearch(s, id)),
     researchFocus: (focus) => change((s) => setResearchFocus(s, focus)),

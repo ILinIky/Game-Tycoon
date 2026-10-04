@@ -7,6 +7,7 @@ import { candidates } from "../employees/recruiting";
 import { quality } from "../projects/projects";
 import { updateMarket } from "../market/market";
 import { ambitionFor } from "../config/design";
+import { featureEffects } from "../config/features";
 import { researchTick, techEffects } from "../research/research";
 import { engineBonus, engineTick, payLicenses } from "../engines/engines";
 import { isWorking } from "../employees/assignment";
@@ -78,6 +79,7 @@ export function tick(source: GameState): GameState {
       random(s) <
         0.22 *
           ambitionFor(p).bugs *
+          featureEffects(p).bugs *
           bugRate *
           (1 - engineBonus(s, p.engine).bugs) *
           (hasPerk(team, "engine") ? 0.9 : 1)
@@ -119,7 +121,9 @@ export function tick(source: GameState): GameState {
       35,
     );
     e.motivation = clamp(
-      e.motivation + (e.stress > 60 ? -0.18 : busy ? -0.008 : 0.12),
+      e.motivation +
+        (e.stress > 60 ? -0.18 : busy ? -0.008 : 0.12) +
+        facility.morale,
       25,
     );
     e.experience += busy ? 0.003 : 0;

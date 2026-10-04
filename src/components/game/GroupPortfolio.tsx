@@ -10,6 +10,7 @@ import { useGame } from "../../store/gameStore";
 import {
   groupStats,
   holdingsOf,
+  incomeBonus,
   monthlyProfit,
   SALE_SHARE,
   subsidiaryValue,
@@ -41,13 +42,14 @@ export default function GroupPortfolio({ sell = false }: { sell?: boolean }) {
   const s = store.game;
   const animated = useStudioMotion();
   const stats = groupStats(s);
+  const bonus = incomeBonus(s);
   const members: Member[] = [
     ...holdingsOf(s).map((h) => ({
       key: h.id,
       name: h.name,
       kind: `${h.id} · ${h.sector}`,
       value: h.value,
-      monthly: monthlyProfit(h),
+      monthly: Math.round(monthlyProfit(h) * bonus),
       earned: h.earned,
       since: h.since,
       holding: true,
@@ -57,7 +59,7 @@ export default function GroupPortfolio({ sell = false }: { sell?: boolean }) {
       name: x.name,
       kind: "Tochterstudio",
       value: subsidiaryValue(s, x.income),
-      monthly: scaled(s, x.income),
+      monthly: Math.round(scaled(s, x.income) * bonus),
       earned: null,
       since: x.since,
       holding: false,

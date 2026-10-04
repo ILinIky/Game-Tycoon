@@ -10,6 +10,7 @@ import { BALANCE, GENRES, OFFICES, SIZES } from "../config/balance";
 import { clamp, date, random, uid } from "../utils";
 import { notify } from "../events/events";
 import { marketScale, nice, scaled } from "../economy/scale";
+import { techEffects } from "../research/research";
 
 const WORDS_A = ["Shadow", "Iron", "Neon", "Crystal", "Silent", "Solar", "Wild", "Lost", "Crimson", "Thunder", "Frozen", "Golden", "Hidden", "Rogue", "Cosmic"];
 const WORDS_B = ["Circuit", "Harbor", "Legends", "Frontier", "Empire", "Drift", "Kingdom", "Protocol", "Odyssey", "Arena", "Tactics", "Saga", "Rush", "Horizon", "Quest"];
@@ -221,7 +222,10 @@ function veteranFrom(s: GameState, c: Competitor): Employee {
 
 /** Pays subsidiary profits monthly; returns the total. */
 export function paySubsidiaries(s: GameState) {
-  const total = s.subsidiaries.reduce((n, x) => n + scaled(s, x.income), 0);
+  const total = Math.round(
+    s.subsidiaries.reduce((n, x) => n + scaled(s, x.income), 0) *
+      (1 + techEffects(s).income),
+  );
   if (!total) return 0;
   s.company.cash += total;
   s.finances.at(-1)!.revenue += total;

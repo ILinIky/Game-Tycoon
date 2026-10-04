@@ -1,6 +1,7 @@
 import type { GameState, MarketingPlan } from "../types";
 import { PRICE_STEPS } from "../projects/pricing";
 import { MARKETING_KEYS } from "../marketing/campaigns";
+import { validFeatures } from "../config/features";
 import {
   BALANCE,
   GENRES,
@@ -309,7 +310,8 @@ export function validateSave(v: unknown): GameState {
           (settings.priceFactor === undefined ||
             PRICE_STEPS.includes(settings.priceFactor as number)) &&
           (settings.marketing === undefined ||
-            MARKETING_KEYS.includes(settings.marketing as MarketingPlan))
+            MARKETING_KEYS.includes(settings.marketing as MarketingPlan)) &&
+          validFeatures(settings.features)
         );
       }) ||
       new Set(v.productionPresets.map((preset) => preset.id)).size !==

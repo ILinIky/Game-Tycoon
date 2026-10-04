@@ -9,6 +9,7 @@ import { pruneArchive } from "./archive";
 import { clamp, random, uid } from "../utils";
 import { notify } from "../events/events";
 import { ambitionFor, DEFAULT_WEIGHTS, DESIGN_FOCUS } from "../config/design";
+import { featureById, featureEffects } from "../config/features";
 import { engineBonus } from "../engines/engines";
 import { nice, scaled } from "../economy/scale";
 import { facilityEffects } from "../office/office";
@@ -24,6 +25,7 @@ export function projectDuration(s: GameState, input: ProjectInput) {
   return Math.round(
     SIZES[input.size].days *
       ambitionFor(input).days *
+      featureEffects(input).days *
       (1 - techEffects(s).speed) *
       (1 - engineBonus(s, input.engine).routine),
   );
@@ -33,6 +35,7 @@ export function projectCost(s: GameState, input: ProjectInput) {
     nice(
       scaled(s, SIZES[input.size].cost) *
         ambitionFor(input).cost *
+        featureEffects(input).cost *
         (1 - techEffects(s).cost),
     ) +
     input.platforms.reduce(
@@ -89,8 +92,15 @@ export function createProject(s: GameState, input: ProjectInput) {
     progress: 0,
     quality: 0,
     bugs: 0,
-    hype: clamp(techEffects(s).hype + (sequel?.hype ?? 0) + (publisher?.hype ?? 0)),
+    hype: clamp(
+      techEffects(s).hype +
+        facilityEffects(s).hype +
+        featureEffects(input).hype +
+        (sequel?.hype ?? 0) +
+        (publisher?.hype ?? 0),
+    ),
     priceFactor: PRICE_STEPS.includes(input.priceFactor ?? 1) ? input.priceFactor : undefined,
+    features: [...new Set(input.features ?? [])].filter((id) => featureById(id)),
     campaigns: 0,
     phase: "Konzept",
     points: {
@@ -163,6 +173,8 @@ export function quality(s: GameState, p: GameProject) {
       Math.min(BALANCE.genreExperienceCap, s.genreExperience[p.genre] ?? 0) *
         BALANCE.genreExperienceQuality +
       (facilityEffects(s).focus[p.designFocus ?? "systems"] ?? 0) +
+      facilityEffects(s).quality +
+      featureEffects(p).quality +
       seriesQuality(p, s) +
       perkQuality(s, p) -
       p.bugs * 0.5) *
