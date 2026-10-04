@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent, type PointerEvent } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -32,31 +32,63 @@ import { compactEuro } from "../game/GroupPortfolio";
 const pct = (n: number, digits = 1) =>
   `${n >= 0 ? "+" : ""}${n.toLocaleString("de-DE", { maximumFractionDigits: digits })} %`;
 
-/** Share price line of the last five years. */
+/** Marked points: roughly one per quarter plus the first and the latest. */
+const markedPoints = (count: number) => {
+  const step = Math.max(1, Math.ceil((count - 1) / 20));
+  const marks = new Set<number>([0, count - 1]);
+  for (let i = count - 1; i >= 0; i -= step) marks.add(i);
+  return [...marks].sort((a, b) => a - b);
+};
+
+/** Share price line of the last five years; hover or arrow keys show values. */
 function PriceChart({ points }: { points: { day: number; price: number }[] }) {
+  const [active, setActive] = useState<number | null>(null);
   if (points.length < 2)
     return (
       <p className="quiet-empty">Der Kursverlauf beginnt nächste Woche.</p>
     );
   const w = 600;
   const h = 150;
+  const last = points.length - 1;
   const min = Math.min(...points.map((p) => p.price));
   const max = Math.max(...points.map((p) => p.price));
   const span = max - min || 1;
-  const x = (i: number) => (i / (points.length - 1)) * w;
+  const x = (i: number) => (i / last) * w;
   const y = (v: number) => h - 8 - ((v - min) / span) * (h - 16);
   const line = points
     .map(
       (p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.price).toFixed(1)}`,
     )
     .join(" ");
-  const up = points.at(-1)!.price >= points[0].price;
+  const up = points[last].price >= points[0].price;
   const price = (v: number) =>
     v.toLocaleString("de-DE", {
       style: "currency",
       currency: "EUR",
       maximumFractionDigits: v < 100 ? 2 : 0,
     });
+  // Dots are HTML so they stay round although the SVG stretches.
+  const at = (i: number) => ({
+    left: `${(i / last) * 100}%`,
+    top: `${(y(points[i].price) / h) * 100}%`,
+  });
+  const pick = (e: PointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const rel = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
+    setActive(Math.round(rel * last));
+  };
+  const keys = (e: KeyboardEvent<HTMLDivElement>) => {
+    const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+    if (e.key === "Home") setActive(0);
+    else if (e.key === "End") setActive(last);
+    else if (e.key === "Escape") setActive(null);
+    else if (step)
+      setActive((i) => Math.min(last, Math.max(0, (i ?? last) + step)));
+    else return;
+    e.preventDefault();
+  };
+  const point = active === null ? null : points[active];
+  const change = (from: number, to: number) => ((to - from) / from) * 100;
   return (
     <div className={`price-chart-frame ${up ? "up" : "down"}`}>
       <div className="price-chart-axis" aria-hidden>
@@ -65,29 +97,85 @@ function PriceChart({ points }: { points: { day: number; price: number }[] }) {
         <span>{price(min)}</span>
       </div>
       <div className="price-chart-plot">
-        <svg
-          className="price-chart"
-          viewBox={`0 0 ${w} ${h}`}
-          preserveAspectRatio="none"
-          role="img"
-          aria-label={`Kursverlauf von ${money(points[0].price)} bis ${money(points.at(-1)!.price)}`}
+        <div
+          className="price-chart-area"
+          tabIndex={0}
+          role="group"
+          aria-label={`Kursverlauf von ${money(points[0].price)} bis ${money(points[last].price)}. Pfeiltasten zeigen einzelne Wochen.`}
+          onPointerMove={pick}
+          onPointerDown={pick}
+          onPointerLeave={(e) => {
+            if (e.pointerType === "mouse") setActive(null);
+          }}
+          onKeyDown={keys}
+          onBlur={() => setActive(null)}
         >
-          {[8, h / 2, h - 8].map((gy) => (
-            <line
-              key={gy}
-              className="price-grid"
-              x1="0"
-              x2={w}
-              y1={gy}
-              y2={gy}
+          <svg
+            className="price-chart"
+            viewBox={`0 0 ${w} ${h}`}
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            {[8, h / 2, h - 8].map((gy) => (
+              <line
+                key={gy}
+                className="price-grid"
+                x1="0"
+                x2={w}
+                y1={gy}
+                y2={gy}
+              />
+            ))}
+            <path className="price-area" d={`${line} L${w},${h} L0,${h} Z`} />
+            <path className="price-line" d={line} />
+          </svg>
+          {markedPoints(points.length).map((i) => (
+            <i
+              key={i}
+              className={`price-dot${i === last ? " latest" : ""}`}
+              style={at(i)}
             />
           ))}
-          <path className="price-area" d={`${line} L${w},${h} L0,${h} Z`} />
-          <path className="price-line" d={line} />
-        </svg>
+          {point && active !== null && (
+            <>
+              <i className="price-cursor" style={{ left: at(active).left }} />
+              <i className="price-dot active" style={at(active)} />
+              <div
+                className={`price-tooltip${active / last > 0.6 ? " flip" : ""}${y(point.price) / h < 0.35 ? " below" : ""}`}
+                style={at(active)}
+                role="status"
+              >
+                <small>
+                  {dateLabel(point.day)}
+                  {active === last && " · aktuell"}
+                </small>
+                <b>{price(point.price)}</b>
+                {active > 0 && (
+                  <span
+                    className={
+                      point.price >= points[active - 1].price ? "up" : "down"
+                    }
+                  >
+                    {pct(change(points[active - 1].price, point.price))} zur
+                    Vorwoche
+                  </span>
+                )}
+                {active < last && (
+                  <span
+                    className={
+                      points[last].price >= point.price ? "up" : "down"
+                    }
+                  >
+                    {pct(change(point.price, points[last].price))} bis heute
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+        </div>
         <div className="price-chart-dates" aria-hidden>
           <span>{dateLabel(points[0].day)}</span>
-          <span>{dateLabel(points.at(-1)!.day)}</span>
+          <span>{dateLabel(points[last].day)}</span>
         </div>
       </div>
     </div>

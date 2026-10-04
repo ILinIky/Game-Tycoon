@@ -2315,6 +2315,91 @@
 .price-chart-frame.down .price-area {
   fill: #eea68012;
 }
+.price-chart-area {
+  position: relative;
+  border-radius: 3px;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+.price-chart-area:focus-visible {
+  outline: 2px solid var(--ft-gold, #ebc88b);
+  outline-offset: 4px;
+}
+.price-chart-area > i {
+  position: absolute;
+  pointer-events: none;
+}
+.price-dot {
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--ft-green);
+  box-shadow: 0 0 0 2px #182f39;
+  opacity: 0.75;
+}
+.price-chart-frame.down .price-dot {
+  background: var(--ft-red);
+}
+.price-dot.latest {
+  opacity: 1;
+}
+.price-dot.active {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  opacity: 1;
+  box-shadow:
+    0 0 0 3px #182f39,
+    0 0 0 5px #ffffff2e;
+}
+.price-cursor {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #ffffff38;
+}
+.price-tooltip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  min-width: 132px;
+  padding: 8px 10px;
+  border: 1px solid #829e8c55;
+  border-radius: 3px;
+  background: #182f39f2;
+  box-shadow: 0 8px 22px #0008;
+  transform: translate(12px, calc(-100% - 10px));
+  pointer-events: none;
+  white-space: nowrap;
+}
+.price-tooltip.flip {
+  transform: translate(calc(-100% - 12px), calc(-100% - 10px));
+}
+.price-tooltip.below {
+  transform: translate(12px, 10px);
+}
+.price-tooltip.flip.below {
+  transform: translate(calc(-100% - 12px), 10px);
+}
+.price-tooltip small {
+  font-size: 9.5px;
+  color: var(--ft-muted);
+}
+.price-tooltip b {
+  font: 600 15px var(--font-display);
+  color: var(--ft-text);
+}
+.price-tooltip span {
+  font-size: 10.5px;
+}
+.price-tooltip .up {
+  color: var(--ft-green);
+}
+.price-tooltip .down {
+  color: var(--ft-red);
+}
 .price-chart-dates {
   display: flex;
   justify-content: space-between;
