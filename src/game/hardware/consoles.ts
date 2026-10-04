@@ -3,6 +3,7 @@ import { PLATFORMS } from "../config/platforms";
 import { isAssigned } from "../employees/assignment";
 import { notify } from "../events/events";
 import { marketScale, scaled } from "../economy/scale";
+import { bookInvestment } from "../economy/valuation";
 import { clamp, date } from "../utils";
 import {
   allPlatforms,
@@ -68,6 +69,7 @@ export function startConsole(s: GameState, name: string, team: string[]) {
   const budget = consoleCost(s, generation);
   s.company.cash -= budget;
   s.finances.at(-1)!.expenses += budget;
+  bookInvestment(s, budget);
   s.consoleProject = {
     name: title,
     generation,

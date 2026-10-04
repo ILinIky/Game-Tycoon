@@ -451,6 +451,10 @@ export interface FinanceRecord {
   revenue: number;
   expenses: number;
   cash: number;
+  /** Part of the expenses that bought lasting assets (office, hardware, studios). */
+  invest?: number;
+  /** Part of the revenue paid by holdings and subsidiaries. */
+  group?: number;
 }
 export interface ResearchProject {
   techId: string;

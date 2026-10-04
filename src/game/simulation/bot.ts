@@ -10,6 +10,7 @@ import { isAssigned } from "../employees/assignment";
 import { date } from "../utils";
 import { marketScale, scaled } from "../economy/scale";
 import { FACILITIES } from "../config/offices";
+import { studioValue } from "../economy/valuation";
 import { buildFacility, facilityBlocker, facilityCost, moveOffice, officeCost } from "../office/office";
 
 /**
@@ -104,7 +105,7 @@ export function simulate(years: number, actions: Record<string, (s: GameState) =
     if (y !== lastYear) {
       const best = s.games.filter((g) => date(g.releasedDay).getUTCFullYear() === lastYear);
       rows.push(
-        `${lastYear} scale=${marketScale(s).toFixed(2)} fac=${s.facilities.length} cash=${Math.round(s.company.cash).toLocaleString("de-DE")} rev=${Math.round(yearRevenue).toLocaleString("de-DE")} fans=${s.company.fans} rep=${Math.round(s.company.reputation)} staff=${s.employees.length} office=${s.company.office} techs=${s.technologies.length} games=${best.length} sizes=${best.map((g) => g.size[0]).join("")} scores=${best.map((g) => g.score.toFixed(1)).join(",")}`,
+        `${lastYear} scale=${marketScale(s).toFixed(2)} fac=${s.facilities.length} cash=${Math.round(s.company.cash).toLocaleString("de-DE")} rev=${Math.round(yearRevenue).toLocaleString("de-DE")} fans=${s.company.fans} rep=${Math.round(s.company.reputation)} staff=${s.employees.length} office=${s.company.office} techs=${s.technologies.length} games=${best.length} value=${Math.round(studioValue(s).total).toLocaleString("de-DE")} profit=${Math.round(studioValue(s).profit).toLocaleString("de-DE")} sizes=${best.map((g) => g.size[0]).join("")} scores=${best.map((g) => g.score.toFixed(1)).join(",")}`,
       );
       lastYear = y;
       yearRevenue = 0;

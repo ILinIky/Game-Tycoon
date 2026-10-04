@@ -1,7 +1,7 @@
 import type { GameState, YearReview } from "../types";
 import { date } from "../utils";
 import { notify } from "../events/events";
-import { studioValuation } from "../economy/valuation";
+import { studioValue } from "../economy/valuation";
 
 const yearStart = (year: number) =>
   Math.round((Date.UTC(year, 0, 1) - Date.UTC(1990, 0, 1)) / 86_400_000);
@@ -26,7 +26,7 @@ export function buildYearReview(s: GameState, year: number): YearReview {
     cash: Math.round(s.company.cash),
     reputation: Math.round(s.company.reputation),
     awards: s.awards.filter((a) => a.year === year).map((a) => `${a.title} · ${a.game}`),
-    valuation: Math.round(studioValuation(s.company)),
+    valuation: Math.round(studioValue(s).total),
   };
 }
 

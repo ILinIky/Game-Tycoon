@@ -11,6 +11,7 @@ import { clamp, date, random, uid } from "../utils";
 import { notify } from "../events/events";
 import { marketScale, nice, scaled } from "../economy/scale";
 import { techEffects } from "../research/research";
+import { bookGroupIncome, bookInvestment } from "../economy/valuation";
 
 const WORDS_A = ["Shadow", "Iron", "Neon", "Crystal", "Silent", "Solar", "Wild", "Lost", "Crimson", "Thunder", "Frozen", "Golden", "Hidden", "Rogue", "Cosmic"];
 const WORDS_B = ["Circuit", "Harbor", "Legends", "Frontier", "Empire", "Drift", "Kingdom", "Protocol", "Odyssey", "Arena", "Tactics", "Saga", "Rush", "Horizon", "Quest"];
@@ -315,6 +316,7 @@ export function acquireStudio(s: GameState, name: string) {
   const strength = strengthOf(c);
   s.company.cash -= price;
   s.finances.at(-1)!.expenses += price;
+  bookInvestment(s, price);
   c.owned = true;
   s.subsidiaries.push({ name: c.name, since: s.day, income: subsidiaryIncome(strength), strength });
   s.company.fans += 2500 * strength;
@@ -366,5 +368,6 @@ export function paySubsidiaries(s: GameState) {
   if (!total) return 0;
   s.company.cash += total;
   s.finances.at(-1)!.revenue += total;
+  bookGroupIncome(s, total);
   return total;
 }

@@ -11,7 +11,7 @@ import {
   prefersYears,
   yearlyFinances,
 } from "../../game/economy/financialStats";
-import { studioValuation } from "../../game/economy/valuation";
+import { studioValue } from "../../game/economy/valuation";
 import { gameTotals } from "../../game/projects/archive";
 export default function StatisticsView() {
   const store = useGame();
@@ -177,7 +177,7 @@ export default function StatisticsView() {
               ? "—"
               : games.avgScore.toFixed(1) + " / 10",
           ],
-          ["Firmenwert", money(studioValuation(s.company))],
+          ["Firmenwert", money(studioValue(s).total)],
           ["Mitarbeiter", s.employees.length],
           ["Fans", s.company.fans],
           ["Erforschte Technologien", s.technologies.length],

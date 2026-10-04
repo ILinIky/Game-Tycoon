@@ -267,6 +267,8 @@ export function buildRanking(
   company: Company,
   group?: RankingGroup | null,
   market?: RankingMarket,
+  /** Studio value in euros; defaults to the company-only estimate. */
+  studio = studioValuation(company),
 ): RankedCompany[] {
   const members = new Set(group?.members ?? []);
   const companies = market ? worldCompanies(market) : realCompanies;
@@ -283,7 +285,7 @@ export function buildRanking(
       country: "",
       sector: "Medien & Spiele" as Sector,
       gaming: true,
-      valueUsd: studioValuation(company) * marketSnapshot.usdPerEur,
+      valueUsd: studio * marketSnapshot.usdPerEur,
       player: true,
     },
     ...(group
@@ -449,14 +451,13 @@ export function worldNeighborhood(
   company: Company,
   group?: RankingGroup | null,
   market?: RankingMarket,
+  studio = studioValuation(company),
 ): RankedCompany[] {
-  const ranking = buildRanking(company, group, market);
+  const ranking = buildRanking(company, group, market, studio);
   const own = ranking.find((entry) => entry.player)!;
   const ownGroup = ranking.find((entry) => entry.group);
   const entries = [
-    ...WORLD_MILESTONES.filter(([eur]) => eur !== studioValuation(company)).map(
-      worldMilestone,
-    ),
+    ...WORLD_MILESTONES.filter(([eur]) => eur !== studio).map(worldMilestone),
     { ...own, rank: estimatedWorldRank(own.valueUsd) },
     ...(ownGroup
       ? [{ ...ownGroup, rank: estimatedWorldRank(ownGroup.valueUsd) }]

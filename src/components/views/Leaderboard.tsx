@@ -124,8 +124,8 @@ export default function Leaderboard() {
     [game.day, company.founder, owned],
   );
   const ranking = useMemo(
-    () => buildRanking(company, group, market),
-    [company, group, market],
+    () => buildRanking(company, group, market, stats.studio),
+    [company, group, market, stats.studio],
   );
   const mergers = useMemo(() => {
     const names = new Map(realCompanies.map((c) => [c.id, c.name]));
@@ -178,7 +178,7 @@ export default function Leaderboard() {
   const startNearby = Math.max(0, ownIndex - 3);
   const displayed =
     mode === "world"
-      ? worldNeighborhood(company, group, market)
+      ? worldNeighborhood(company, group, market, stats.studio)
       : mode === "group"
         ? ranking.filter(
             (entry) => entry.group || entry.player || entry.memberOf,

@@ -10,7 +10,7 @@ import { scaled } from "../economy/scale";
 export const FOUNDER_SHARES = 100_000_000;
 /** Minimum office tier and fundamental value (in 1990 euros) for an IPO. */
 export const IPO_OFFICE = 3;
-export const IPO_VALUE = 15_000_000;
+export const IPO_VALUE = 40_000_000;
 /** Shares that can be offered at the IPO. */
 export const IPO_FLOATS = [0.15, 0.25, 0.4];
 /** Investors expect this revenue growth per quarter. */

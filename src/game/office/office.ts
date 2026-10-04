@@ -4,6 +4,7 @@ import type { FacilityEffects } from "../config/offices";
 import { nice, scaled } from "../economy/scale";
 import { BALANCE } from "../config/balance";
 import { notify } from "../events/events";
+import { bookInvestment } from "../economy/valuation";
 
 export const office = (s: GameState) => OFFICES[s.company.office] ?? OFFICES[0];
 export const officeRent = (s: GameState) => scaled(s, office(s).rent);
@@ -64,6 +65,7 @@ export function buildFacility(s: GameState, id: string) {
   const cost = facilityCost(s, id);
   s.company.cash -= cost;
   s.finances.at(-1)!.expenses += cost;
+  bookInvestment(s, cost);
   s.facilities.push(id);
   notify(s, "Neuer Raum im Studio", `${facilityById(id)!.name} ist eingerichtet.`, "success");
 }
@@ -80,6 +82,7 @@ export function moveOffice(s: GameState) {
   if (s.company.cash < cost) throw new Error("Dafür reicht dein Budget aktuell nicht.");
   s.company.cash -= cost;
   s.finances.at(-1)!.expenses += cost;
+  bookInvestment(s, cost);
   s.company.office++;
   notify(s, "Raum für mehr", `Dein Studio zieht in ${next.name}.`, "success");
 }

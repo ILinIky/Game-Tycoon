@@ -1778,9 +1778,12 @@
 .group-composition li b {
   margin-left: auto;
   font-family: var(--font-display);
+  white-space: nowrap;
 }
 .group-composition li small {
+  flex: none;
   width: 48px;
+  white-space: nowrap;
   text-align: right;
   color: var(--ft-muted);
 }
@@ -1800,6 +1803,57 @@
 .group-composition-bar .holdings,
 .group-dot.holdings {
   background: var(--ft-green);
+}
+.group-composition-bar .earnings,
+.group-dot.earnings {
+  background: var(--ft-gold);
+}
+.group-composition-bar .cash,
+.group-dot.cash {
+  background: #e8dcbc;
+}
+.group-composition-bar .brand,
+.group-dot.brand {
+  background: #d9a5b8;
+}
+.group-composition-bar .assets,
+.group-dot.assets {
+  background: #9aa3a0;
+}
+.group-composition-bar .premium,
+.group-dot.premium {
+  background: #b9a2dc;
+}
+.group-composition li .group-part {
+  display: grid;
+  min-width: 0;
+}
+.group-composition li .group-part small {
+  width: auto;
+  text-align: left;
+  font-size: 9.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.group-composition li.minus b {
+  color: var(--ft-red);
+}
+.group-composition li.minus .group-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ft-red);
+}
+.group-composition li.group-total {
+  margin-top: 3px;
+  padding-top: 7px;
+  border-top: 1px solid #ffffff1c;
+  font-weight: 600;
+}
+.group-composition li.group-total b {
+  color: var(--ft-gold);
+}
+.group-composition li.group-total .group-dot {
+  background: transparent;
 }
 @media (max-width: 1150px) {
   .company-offer {

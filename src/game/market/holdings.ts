@@ -1,5 +1,5 @@
 import type { GameState, Holding } from "../types";
-import { studioValuation } from "../economy/valuation";
+import { bookGroupIncome, studioValue } from "../economy/valuation";
 import { notify } from "../events/events";
 import { clamp, random } from "../utils";
 import { scaled } from "../economy/scale";
@@ -129,6 +129,7 @@ export function payHoldings(s: GameState) {
   if (!total) return 0;
   s.company.cash += total;
   s.finances.at(-1)!.revenue += total;
+  bookGroupIncome(s, total);
   return total;
 }
 
@@ -141,7 +142,8 @@ export const subsidiaryValue = (s: Pick<GameState, "day">, income: number) =>
 /** Key figures of the player's group: studio, rival studios and holdings. */
 export function groupStats(s: GameState) {
   const holdings = holdingsOf(s);
-  const studio = studioValuation(s.company);
+  const studioParts = studioValue(s);
+  const studio = studioParts.total;
   const holdingsValue = holdings.reduce(
     (n, h) => n + currentValue(h, s.day),
     0,
@@ -167,6 +169,7 @@ export function groupStats(s: GameState) {
     name: groupName(s.company.name),
     active: holdings.length + s.subsidiaries.length > 0 || !!s.stock,
     studio,
+    studioParts,
     holdingsValue,
     subsidiariesValue,
     /** Fundamental value of everything the group owns. */
