@@ -6,6 +6,16 @@ import { marketScale, nice } from "../economy/scale";
 import { salesLifetime } from "../economy/salesHistory";
 
 export const PRICE_STEPS = [0.6, 0.8, 1, 1.2, 1.4];
+/** Price levels for the production plan and the archive. */
+export const PRICE_LEVELS: { factor: number; label: string; description: string }[] = [
+  { factor: 0.6, label: "Sehr niedrig", description: "Viele Käufer und Fans, wenig pro Verkauf" },
+  { factor: 0.8, label: "Niedrig", description: "Mehr Käufer, mehr Fans" },
+  { factor: 1, label: "Normal", description: "Marktüblich" },
+  { factor: 1.2, label: "Hoch", description: "Lohnt bei guten Wertungen" },
+  { factor: 1.4, label: "Sehr hoch", description: "Nur für Spitzenwertungen" },
+];
+export const priceLevel = (factor = 1) =>
+  PRICE_LEVELS.find((level) => level.factor === factor) ?? PRICE_LEVELS[2];
 export const SALE_DAYS = 14;
 export const SALE_COOLDOWN = 90;
 export const MAX_DLCS = 3;

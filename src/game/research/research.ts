@@ -151,7 +151,15 @@ export function releaseResearch(
       (1 + techEffects(s).research),
   );
 }
-const SIZE_RESEARCH = { Indie: 1, Small: 1.5, Medium: 2.5, AAA: 4 };
+const SIZE_RESEARCH = {
+  Indie: 1,
+  Small: 1.5,
+  Medium: 2.5,
+  AAA: 4,
+  Blockbuster: 6,
+  Mega: 8,
+  Legend: 11,
+};
 
 export function techStatus(s: GameState, t: Technology): TechStatus {
   if (s.research.some((r) => r.techId === t.id)) return "active";

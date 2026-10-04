@@ -1,4 +1,6 @@
-import type { GameState } from "../types";
+import type { GameState, MarketingPlan } from "../types";
+import { PRICE_STEPS } from "../projects/pricing";
+import { MARKETING_KEYS } from "../marketing/campaigns";
 import {
   BALANCE,
   GENRES,
@@ -100,7 +102,7 @@ const project = (v: unknown) =>
   (v.autoReleased === undefined || typeof v.autoReleased === "boolean") &&
   fields(v.points, points) &&
   GENRES.includes(v.genre as (typeof GENRES)[number]) &&
-  ["Indie", "Small", "Medium", "AAA"].includes(v.size as string) &&
+  Object.keys(SIZES).includes(v.size as string) &&
   (v.designFocus === undefined ||
     ["systems", "technology", "atmosphere"].includes(
       v.designFocus as string,
@@ -303,7 +305,11 @@ export function validateSave(v: unknown): GameState {
           (settings.ambition === undefined ||
             ["focused", "balanced", "experimental"].includes(
               settings.ambition as string,
-            ))
+            )) &&
+          (settings.priceFactor === undefined ||
+            PRICE_STEPS.includes(settings.priceFactor as number)) &&
+          (settings.marketing === undefined ||
+            MARKETING_KEYS.includes(settings.marketing as MarketingPlan))
         );
       }) ||
       new Set(v.productionPresets.map((preset) => preset.id)).size !==
@@ -464,6 +470,19 @@ function normalizeFeatures(s: GameState) {
         fields(x, ["since", "income", "strength"], ["name"]),
       )
     : [];
+  s.retiredGames = fields(s.retiredGames, [
+    "count",
+    "units",
+    "revenue",
+    "scoreSum",
+  ])
+    ? {
+        ...s.retiredGames,
+        bestChart: numeric(s.retiredGames.bestChart)
+          ? s.retiredGames.bestChart
+          : null,
+      }
+    : undefined;
   s.holdings = Array.isArray(s.holdings)
     ? s.holdings
         .filter((x) =>

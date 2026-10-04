@@ -23,16 +23,25 @@ import {
   Save,
   ListPlus,
   Repeat2,
+  Lock,
 } from "lucide-react";
 import { useGame } from "../store/gameStore";
-import type { ProjectInput } from "../game/types";
+import type { MarketingPlan, ProjectInput } from "../game/types";
 import {
   BALANCE,
   GENRES,
   THEMES,
   PLATFORMS,
+  OFFICES,
   SIZES,
+  sizeLabel,
 } from "../game/config/balance";
+import { PRICE_LEVELS, priceLevel } from "../game/projects/pricing";
+import {
+  MARKETING_KEYS,
+  MARKETING_PLANS,
+  marketingBudget,
+} from "../game/marketing/campaigns";
 import { money } from "../game/utils";
 import { projectCost, projectDuration } from "../game/projects/projects";
 import { engineBonus, isAssigned } from "../game/engines/engines";
@@ -93,6 +102,8 @@ export default function ProjectWizard({
     designFocus: initialSequel?.base.designFocus ?? "systems",
     ambition: "balanced",
     sequelOf: initialSequel?.eligible ? initialSequel.base.id : undefined,
+    priceFactor: 1,
+    marketing: "basic",
   });
   const sequel = input.sequelOf ? sequelPlan(s, input.sequelOf) : null;
   // Only the newest entry of each series can be continued.
@@ -158,7 +169,9 @@ export default function ProjectWizard({
     ) &&
     s.engines.some((engine) => engine.id === plan.engine);
   const cost = projectCost(s, plan);
+  const marketing = marketingBudget(s, plan.marketing);
   const ready =
+    s.company.office >= SIZES[input.size].office &&
     input.name.trim().length > 0 &&
     input.platforms.length > 0 &&
     input.team.length >= SIZES[input.size].team &&
@@ -216,7 +229,7 @@ export default function ProjectWizard({
                   >
                     <strong>{preset.name}</strong>
                     <small>
-                      {preset.settings.size} ·{" "}
+                      {sizeLabel(preset.settings.size)} ·{" "}
                       {preset.settings.platforms.length} Plattform
                       {preset.settings.platforms.length !== 1
                         ? "en"
@@ -252,8 +265,10 @@ export default function ProjectWizard({
               <span>
                 <Check size={13} /> {presetName}
                 <small>
-                  {plan.theme} · {plan.size} ·{" "}
-                  {s.engines.find((engine) => engine.id === plan.engine)?.name}
+                  {plan.theme} · {sizeLabel(plan.size)} ·{" "}
+                  {s.engines.find((engine) => engine.id === plan.engine)?.name}{" "}
+                  · Preis {priceLevel(plan.priceFactor).label} ·{" "}
+                  {MARKETING_PLANS[plan.marketing ?? "none"].label}
                   <br />
                   {plan.platforms
                     .map(
@@ -454,7 +469,10 @@ export default function ProjectWizard({
                       <small>
                         {autoRelease
                           ? "Fertige Spiele erscheinen automatisch. Das nächste Spiel rückt sofort nach."
-                          : "Du veröffentlichst fertige Spiele selbst. Das Team wartet bis zum Release."}
+                          : "Du veröffentlichst fertige Spiele selbst. Das Team wartet bis zum Release."}{" "}
+                        Marketing der Vorlage:{" "}
+                        {MARKETING_PLANS[plan.marketing ?? "none"].label} ·
+                        Preis {priceLevel(plan.priceFactor).label}.
                       </small>
                     </span>
                     <i className={autoRelease ? "on" : ""}>
@@ -635,33 +653,82 @@ export default function ProjectWizard({
               </div>
               <label>Projektumfang</label>
               <div className="choice-grid sizes">
-                {Object.entries(SIZES).map(([name, spec]) => (
-                  <button
-                    className={`choice ${input.size === name ? "selected" : ""}`}
-                    key={name}
-                    onClick={() => update("size", name as ProjectInput["size"])}
-                  >
-                    <strong>{name}</strong>
-                    <small>
-                      {money(
-                        projectCost(s, {
-                          ...input,
-                          size: name as ProjectInput["size"],
-                          platforms: [],
-                        }),
-                      )}{" "}
-                      ·{" "}
-                      {projectDuration(s, {
-                        ...input,
-                        size: name as ProjectInput["size"],
-                      })}{" "}
-                      Arbeitstage
-                      <br />
-                      ab {spec.team} Teammitgliedern
-                    </small>
-                  </button>
-                ))}
+                {(Object.keys(SIZES) as ProjectInput["size"][]).map((name) => {
+                  const spec = SIZES[name];
+                  const locked = s.company.office < spec.office;
+                  return (
+                    <button
+                      className={`choice size-choice ${input.size === name ? "selected" : ""}`}
+                      key={name}
+                      disabled={locked}
+                      aria-pressed={input.size === name}
+                      onClick={() => update("size", name)}
+                    >
+                      <strong>{spec.label}</strong>
+                      <em>{spec.tagline}</em>
+                      <small>
+                        {money(
+                          projectCost(s, {
+                            ...input,
+                            size: name,
+                            platforms: [],
+                          }),
+                        )}{" "}
+                        · {projectDuration(s, { ...input, size: name })}{" "}
+                        Arbeitstage
+                        <br />
+                        ab {spec.team} Teammitgliedern
+                        <br />
+                        Verkäufe ×{spec.sales.toLocaleString("de-DE")}
+                      </small>
+                      {locked && (
+                        <span className="size-lock">
+                          <Lock size={11} /> ab {OFFICES[spec.office].name}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+              <div className="form-row production-fields pricing-fields">
+                <label>
+                  Verkaufspreis
+                  <GameSelect
+                    label="Verkaufspreis"
+                    value={String(input.priceFactor ?? 1)}
+                    onChange={(value) => update("priceFactor", Number(value))}
+                    options={PRICE_LEVELS.map((level) => ({
+                      value: String(level.factor),
+                      label: `${level.label} · ${money(Math.round(SIZES[input.size].price * level.factor))}`,
+                      description: level.description,
+                    }))}
+                  />
+                </label>
+                <label>
+                  Marketing
+                  <GameSelect
+                    label="Marketing"
+                    value={input.marketing ?? "none"}
+                    onChange={(value) =>
+                      update("marketing", value as MarketingPlan)
+                    }
+                    options={MARKETING_KEYS.map((key) => ({
+                      value: key,
+                      label: MARKETING_PLANS[key].label,
+                      description: `${MARKETING_PLANS[key].description}${
+                        key === "none"
+                          ? ""
+                          : ` · ${key === "max" ? "bis " : ""}${money(marketingBudget(s, key))}`
+                      }`,
+                    }))}
+                  />
+                </label>
+              </div>
+              <p className="hint">
+                Der Preis gilt ab Release und lässt sich im Spielearchiv ändern.
+                Geplante Kampagnen laufen automatisch während der Entwicklung –
+                auch für Spiele aus der Warteschlange.
+              </p>
             </div>
           )}
           {step === 3 && (
@@ -782,7 +849,7 @@ export default function ProjectWizard({
                 <span>
                   {input.name || "Dein Spiel"}
                   <small>
-                    {input.genre} / {input.theme} · {input.size}
+                    {input.genre} / {input.theme} · {sizeLabel(input.size)}
                   </small>
                 </span>
                 <Badge>
@@ -802,6 +869,12 @@ export default function ProjectWizard({
           <strong className={s.company.cash < cost ? "negative" : ""}>
             {money(cost)}
           </strong>
+          {marketing > 0 && (
+            <small className="wizard-advance">
+              + {plan.marketing === "max" ? "bis " : ""}
+              {money(marketing)} Marketing
+            </small>
+          )}
           {input.publisher && (
             <small className="wizard-advance">
               +

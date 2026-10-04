@@ -2,6 +2,7 @@ import { acceptContract, cancelContract } from "../game/contracts/contracts";
 import { setPrice, startDlc, startSale } from "../game/projects/pricing";
 import { bookExpo } from "../game/marketing/expo";
 import { acquireStudio } from "../game/market/rivals";
+import { runCampaign } from "../game/marketing/campaigns";
 import {
   buyCompany,
   sellCompany,
@@ -9,7 +10,6 @@ import {
 } from "../game/market/holdings";
 import {
   adjustSalary,
-  countPerk,
   resolvePoach,
   resolveSalary,
   resolveTeamRaise,
@@ -17,14 +17,12 @@ import {
 import type { BoothSize } from "../game/types";
 import { create } from "zustand";
 import {
-  campaignCost,
   loanAmount,
   loanLimit,
   patchCost,
 } from "../game/economy/scale";
 import {
   buildFacility,
-  facilityEffects,
   moveOffice,
   removeFacility,
   trainingCost,
@@ -56,10 +54,8 @@ import {
   cancelResearch,
   setResearchFocus,
   startResearch,
-  techEffects,
   upgradeLab,
 } from "../game/research/research";
-import { BALANCE } from "../game/config/balance";
 import { clamp } from "../game/utils";
 import { notify } from "../game/events/events";
 type Store = {
@@ -219,15 +215,7 @@ export const useGame = create<Store>((set, get) => {
       change((s) => {
         const p = [...s.projects, ...s.games].find((p) => p.id === id);
         if (!p) throw new Error("Wähle ein Projekt.");
-        if (p.hype >= 100)
-          throw new Error("Dieses Spiel hat bereits maximale Aufmerksamkeit.");
-        spend(s, campaignCost(s));
-        p.hype = clamp(
-          p.hype +
-            (BALANCE.campaignHype + techEffects(s).campaign) *
-              (1 + facilityEffects(s).campaign) *
-              (countPerk(s, "marketing") ? 1.25 : 1),
-        );
+        runCampaign(s, p);
         notify(
           s,
           "Die Welt schaut zu",

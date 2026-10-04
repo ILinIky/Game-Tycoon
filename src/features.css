@@ -702,14 +702,14 @@
   box-shadow: 0 0 14px #e7c06a55;
   animation: ft-shine 3.5s ease-in-out infinite;
 }
-.trophy.silver .trophy-icon {
+.trophy.tone-silver .trophy-icon {
   background: radial-gradient(circle at 35% 30%, #ffffff, #c6ccd0 60%, #8a9399);
   box-shadow: 0 0 12px #dfe6ea44;
 }
-.trophy.bronze .trophy-icon {
+.trophy.tone-bronze .trophy-icon {
   background: radial-gradient(circle at 35% 30%, #ffe0c2, #c98a55 60%, #8a5630);
 }
-.trophy.chart .trophy-icon {
+.trophy.tone-chart .trophy-icon {
   background: radial-gradient(circle at 35% 30%, #e7fff1, #8fd0a7 60%, #4f8a67);
 }
 .trophy strong {
@@ -1858,5 +1858,197 @@
   }
   .group-member-bar {
     grid-row: auto;
+  }
+}
+
+/* ---------- Produktionsplan: Umfang, Preis, Marketing ---------- */
+.choice.size-choice {
+  position: relative;
+  text-align: left;
+}
+.choice.size-choice em {
+  display: block;
+  margin-top: 3px;
+  font-style: normal;
+  font-size: 9.5px;
+  opacity: 0.75;
+}
+.pricing-fields {
+  margin-top: 16px;
+}
+.size-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 9px;
+  color: var(--ft-gold);
+}
+
+/* ---------- Spielearchiv ---------- */
+.trophy-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.trophy-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 3px;
+  background: #ffffff08;
+  border: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--ft-muted);
+}
+.trophy-count b {
+  font: 700 12px var(--font-display);
+  color: #e7c06a;
+}
+.trophy-count.tone-silver b {
+  color: #dfe6ea;
+}
+.trophy-count.tone-bronze b {
+  color: #d9a070;
+}
+.trophy-count.tone-chart b {
+  color: #8fd0a7;
+}
+.trophy-count.is-empty {
+  opacity: 0.5;
+}
+.trophy-toggle,
+.games-archive-toggle,
+.archive-row {
+  background: transparent;
+  color: var(--ft-text);
+}
+.trophy-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  padding: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ft-gold);
+}
+.game-badge.badge-award {
+  color: #e7c06a;
+  background: #e7c06a18;
+  border-color: #e7c06a44;
+}
+.games-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 -4px;
+}
+.games-section-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ft-text);
+}
+.games-section-heading small {
+  font-size: 10px;
+  color: var(--ft-muted);
+}
+.games-archive {
+  padding: 0;
+  overflow: hidden;
+}
+.games-archive-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 18px;
+  text-align: left;
+}
+.games-archive-toggle > svg:first-child {
+  color: var(--ft-gold);
+}
+.games-archive-toggle span {
+  flex: 1;
+  min-width: 0;
+}
+.games-archive-toggle strong {
+  display: block;
+  font-size: 13px;
+}
+.games-archive-toggle small {
+  font-size: 10px;
+  color: var(--ft-muted);
+}
+.games-archive > .hint {
+  margin: 0;
+  padding: 0 18px 14px;
+}
+.archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0 12px 12px;
+  list-style: none;
+}
+.archive-list li {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #ffffff05;
+}
+.archive-list li.open {
+  border-color: #d9b47b55;
+}
+.archive-list li.open > .released-game {
+  margin: 0 8px 8px;
+}
+.archive-row {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 90px 130px auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+}
+.archive-row:hover {
+  background: #ffffff08;
+}
+.archive-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 700 13px var(--font-display);
+  color: var(--ft-gold);
+}
+.archive-name {
+  min-width: 0;
+}
+.archive-name strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.archive-name small,
+.archive-figure small {
+  display: block;
+  font-size: 9.5px;
+  color: var(--ft-muted);
+}
+.archive-figure {
+  font: 600 12px var(--font-display);
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .archive-row {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+  }
+  .archive-figure {
+    grid-column: 2;
   }
 }

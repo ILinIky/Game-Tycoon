@@ -24,6 +24,7 @@ import {
 } from "../employees/perks";
 import { paySubsidiaries, rivalsTick } from "../market/rivals";
 import { payHoldings } from "../market/holdings";
+import { autoMarketing } from "../marketing/campaigns";
 import { expoTick } from "../marketing/expo";
 import { yearTick } from "../progress/yearly";
 export function tick(source: GameState): GameState {
@@ -135,6 +136,7 @@ export function tick(source: GameState): GameState {
           ),
         );
   }
+  autoMarketing(s);
   if (s.recruitment && --s.recruitment.remaining <= 0) candidates(s);
   researchTick(s);
   engineTick(s);

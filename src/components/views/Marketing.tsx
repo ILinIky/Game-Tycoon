@@ -3,6 +3,8 @@ import { campaignCost } from "../../game/economy/scale";
 import { Megaphone } from "lucide-react";
 import { useGame } from "../../store/gameStore";
 import { money } from "../../game/utils";
+import { isOnSale } from "../../game/projects/archive";
+import { MARKETING_PLANS } from "../../game/marketing/campaigns";
 import { Badge, Button, Card, Empty, Progress } from "../ui";
 export default function MarketingView() {
   const store = useGame();
@@ -22,30 +24,36 @@ export default function MarketingView() {
       </Card>
       <ExpoPlanner />
       <div className="research-grid">
-        {[...s.projects, ...s.games].map((p) => (
-          <Card className="research-card" key={p.id}>
-            <Badge tone="neutral">
-              {"releasedDay" in p ? "Veröffentlicht" : "In Entwicklung"}
-            </Badge>
-            <h2>{p.name}</h2>
-            <p>
-              {p.genre} · {p.theme}
-            </p>
-            <div className="hype">
-              <span>
-                Aufmerksamkeit <b>{Math.round(p.hype)} / 100</b>
-              </span>
-              <Progress value={p.hype} />
-            </div>
-            <Button
-              detail={money(campaignCost(s))}
-              disabled={s.company.cash < campaignCost(s) || p.hype >= 100}
-              onClick={() => store.campaign(p.id)}
-            >
-              Werbung schalten
-            </Button>
-          </Card>
-        ))}
+        {[...s.projects, ...s.games.filter((g) => isOnSale(g, s.day))].map(
+          (p) => (
+            <Card className="research-card" key={p.id}>
+              <Badge tone="neutral">
+                {"releasedDay" in p ? "Veröffentlicht" : "In Entwicklung"}
+              </Badge>
+              <h2>{p.name}</h2>
+              <p>
+                {p.genre} · {p.theme}
+                {!("releasedDay" in p) &&
+                  p.marketing &&
+                  p.marketing !== "none" &&
+                  ` · Auto: ${MARKETING_PLANS[p.marketing].label} (${Math.min(p.campaigns ?? 0, MARKETING_PLANS[p.marketing].campaigns)}/${MARKETING_PLANS[p.marketing].campaigns})`}
+              </p>
+              <div className="hype">
+                <span>
+                  Aufmerksamkeit <b>{Math.round(p.hype)} / 100</b>
+                </span>
+                <Progress value={p.hype} />
+              </div>
+              <Button
+                detail={money(campaignCost(s))}
+                disabled={s.company.cash < campaignCost(s) || p.hype >= 100}
+                onClick={() => store.campaign(p.id)}
+              >
+                Werbung schalten
+              </Button>
+            </Card>
+          ),
+        )}
       </div>
       {!s.projects.length && !s.games.length && (
         <Card>

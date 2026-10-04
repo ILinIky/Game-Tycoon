@@ -14,6 +14,8 @@ import {
   productionQueueStatus,
 } from "../game/projects/queue";
 import { money } from "../game/utils";
+import { sizeLabel } from "../game/config/balance";
+import { MARKETING_PLANS } from "../game/marketing/campaigns";
 import { Button, Card } from "./ui";
 
 export default function ProductionQueuePanel({
@@ -72,13 +74,16 @@ export default function ProductionQueuePanel({
                   <strong>{entry.input.name}</strong>
                   <small>
                     {entry.presetName} · {entry.input.genre} ·{" "}
-                    {entry.input.size}
+                    {sizeLabel(entry.input.size)}
                   </small>
                   <span>
                     <Repeat2 size={11} />{" "}
                     {entry.autoRelease
                       ? "Automatischer Release"
                       : "Release per Hand"}
+                    {entry.input.marketing &&
+                      entry.input.marketing !== "none" &&
+                      ` · ${MARKETING_PLANS[entry.input.marketing].label}`}
                   </span>
                 </div>
                 <div className="production-job-status">

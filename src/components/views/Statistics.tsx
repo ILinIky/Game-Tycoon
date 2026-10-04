@@ -12,10 +12,12 @@ import {
   yearlyFinances,
 } from "../../game/economy/financialStats";
 import { studioValuation } from "../../game/economy/valuation";
+import { gameTotals } from "../../game/projects/archive";
 export default function StatisticsView() {
   const store = useGame();
   const s = store.game;
   const totals = financialStats(s);
+  const games = gameTotals(s);
   const [metric, setMetric] = useState<FinanceMetric>("Gewinn");
   // Long-running studios read better by year; the player can switch anytime.
   const [range, setRange] = useState<"months" | "years">(() =>
@@ -166,16 +168,14 @@ export default function StatisticsView() {
       </section>
       <div className="stats-grid">
         {[
-          ["Veröffentlichte Spiele", s.games.length],
-          ["Verkaufte Einheiten", s.games.reduce((n, g) => n + g.units, 0)],
-          ["Spieleumsatz", money(s.games.reduce((n, g) => n + g.revenue, 0))],
+          ["Veröffentlichte Spiele", games.count],
+          ["Verkaufte Einheiten", games.units],
+          ["Spieleumsatz", money(games.revenue)],
           [
             "Ø Review",
-            s.games.length
-              ? (
-                  s.games.reduce((n, g) => n + g.score, 0) / s.games.length
-                ).toFixed(1) + " / 10"
-              : "—",
+            games.avgScore === null
+              ? "—"
+              : games.avgScore.toFixed(1) + " / 10",
           ],
           ["Firmenwert", money(studioValuation(s.company))],
           ["Mitarbeiter", s.employees.length],
@@ -184,7 +184,7 @@ export default function StatisticsView() {
           ["Auszeichnungen", s.awards.length],
           ["Erledigte Aufträge", s.contracts.completed],
           ["Tochterstudios", s.subsidiaries.length],
-          ["Beste Chartplatzierung", Math.min(99, ...s.games.map((g) => g.chartPeak ?? 99)) === 99 ? "—" : `#${Math.min(...s.games.map((g) => g.chartPeak ?? 99))}`],
+          ["Beste Chartplatzierung", games.bestChart === null ? "—" : `#${games.bestChart}`],
         ].map(([label, v]) => (
           <Card className="stat-card" key={label}>
             <div className="stat-top">{label}</div>

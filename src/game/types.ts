@@ -60,7 +60,14 @@ export interface GameProject {
   theme: string;
   platforms: string[];
   audience: string;
-  size: "Indie" | "Small" | "Medium" | "AAA";
+  size:
+    | "Indie"
+    | "Small"
+    | "Medium"
+    | "AAA"
+    | "Blockbuster"
+    | "Mega"
+    | "Legend";
   team: string[];
   duration: number;
   elapsed: number;
@@ -78,6 +85,12 @@ export interface GameProject {
   franchise?: string;
   entry?: number;
   publisher?: PublisherDeal;
+  /** Launch price as factor of the scope's base price (see PRICE_STEPS). */
+  priceFactor?: number;
+  /** Automatic marketing during development. */
+  marketing?: MarketingPlan;
+  /** Automatic campaigns already handled for this project. */
+  campaigns?: number;
   /** Snapshot of the production queue settings used to start this game. */
   production?: { presetName: string; queuedDay: number; autoRelease: boolean };
   points: {
@@ -90,6 +103,7 @@ export interface GameProject {
   };
   phase: string;
 }
+export type MarketingPlan = "none" | "basic" | "strong" | "max";
 export interface Review {
   magazine: string;
   score: number;
@@ -328,6 +342,13 @@ export interface Holding {
   /** Last monthly payout. */
   lastIncome?: number;
 }
+export interface RetiredGames {
+  count: number;
+  units: number;
+  revenue: number;
+  scoreSum: number;
+  bestChart: number | null;
+}
 export interface YearStats {
   year: number;
   revenue: number;
@@ -419,6 +440,8 @@ export interface GameState {
   awards: Award[];
   subsidiaries: Subsidiary[];
   holdings?: Holding[];
+  /** Totals of games removed from the archive (see MAX_ARCHIVED_GAMES). */
+  retiredGames?: RetiredGames;
   yearStats: YearStats;
   yearReviews: YearReview[];
 }
@@ -449,4 +472,6 @@ export type ProjectInput = Pick<
   | "ambition"
   | "sequelOf"
   | "publisher"
+  | "priceFactor"
+  | "marketing"
 >;

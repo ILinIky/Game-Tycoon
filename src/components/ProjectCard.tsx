@@ -3,6 +3,7 @@ import { useGame } from "../store/gameStore";
 import { money } from "../game/utils";
 import type { GameProject } from "../game/types";
 import { Badge, Progress, Button } from "./ui";
+import { sizeLabel } from "../game/config/balance";
 import GameArtwork from "./game/GameArtwork";
 export function ProjectCard({
   project: p,
@@ -29,7 +30,7 @@ export function ProjectCard({
           </Badge>
         </div>
         <p>
-          {p.genre} <span>·</span> {p.theme} <span>·</span> {p.size}
+          {p.genre} <span>·</span> {p.theme} <span>·</span> {sizeLabel(p.size)}
         </p>
         <div className="project-progress">
           <Progress value={p.progress} />

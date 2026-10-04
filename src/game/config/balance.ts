@@ -74,13 +74,92 @@ export const THEMES = [
   "Business",
   "Piraten",
 ];
-/** Budgets in 1990 euros; `sales` multiplies units, `price` is the shop price. */
+/**
+ * Budgets in 1990 euros; `sales` multiplies units, `price` is the shop price.
+ * `office` is the minimum office tier for the scope.
+ */
 export const SIZES = {
-  Indie: { cost: 5000, days: 48, team: 1, sales: 1, price: 15, fame: 0.6 },
-  Small: { cost: 30000, days: 85, team: 2, sales: 2, price: 25, fame: 0.8 },
-  Medium: { cost: 180000, days: 150, team: 4, sales: 3.5, price: 39, fame: 1 },
-  AAA: { cost: 900000, days: 280, team: 8, sales: 6, price: 55, fame: 1.3 },
+  Indie: {
+    label: "Indie",
+    tagline: "Kleines Herzensprojekt",
+    cost: 5000,
+    days: 48,
+    team: 1,
+    sales: 1,
+    price: 15,
+    fame: 0.6,
+    office: 0,
+  },
+  Small: {
+    label: "Small",
+    tagline: "Kompaktes Spiel",
+    cost: 30000,
+    days: 85,
+    team: 2,
+    sales: 2,
+    price: 25,
+    fame: 0.8,
+    office: 0,
+  },
+  Medium: {
+    label: "Medium",
+    tagline: "Vollpreistitel",
+    cost: 180000,
+    days: 150,
+    team: 4,
+    sales: 3.5,
+    price: 39,
+    fame: 1,
+    office: 0,
+  },
+  AAA: {
+    label: "AAA",
+    tagline: "Große Studioproduktion",
+    cost: 900000,
+    days: 280,
+    team: 8,
+    sales: 6,
+    price: 55,
+    fame: 1.3,
+    office: 0,
+  },
+  Blockbuster: {
+    label: "AAA+ Blockbuster",
+    tagline: "Weltweiter Großrelease",
+    cost: 3000000,
+    days: 340,
+    team: 12,
+    sales: 13,
+    price: 65,
+    fame: 1.5,
+    office: 3,
+  },
+  Mega: {
+    label: "Mega-Produktion",
+    tagline: "Ein Spiel für Millionen",
+    cost: 10000000,
+    days: 420,
+    team: 20,
+    sales: 32,
+    price: 70,
+    fame: 1.7,
+    office: 4,
+  },
+  Legend: {
+    label: "Jahrhundertspiel",
+    tagline: "Das Spiel, über das alle sprechen",
+    cost: 35000000,
+    days: 520,
+    team: 32,
+    sales: 80,
+    price: 80,
+    fame: 2,
+    office: 5,
+  },
 };
+export type ProjectSize = keyof typeof SIZES;
+export const sizeLabel = (size: string) =>
+  SIZES[size as ProjectSize]?.label ?? size;
 export { OFFICES } from "./offices";
 export { PLATFORMS } from "./platforms";
 export { TECHNOLOGIES } from "./technologies";

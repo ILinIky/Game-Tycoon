@@ -3,7 +3,9 @@ import { resolvePublisher } from "../contracts/contracts";
 import { perkQuality } from "../employees/perks";
 import { isAvailable } from "../market/platforms";
 import type { GameState, ProjectInput, GameProject } from "../types";
-import { BALANCE, SIZES, PLATFORMS } from "../config/balance";
+import { BALANCE, OFFICES, SIZES, PLATFORMS } from "../config/balance";
+import { PRICE_STEPS } from "./pricing";
+import { pruneArchive } from "./archive";
 import { clamp, random, uid } from "../utils";
 import { notify } from "../events/events";
 import { ambitionFor, DEFAULT_WEIGHTS, DESIGN_FOCUS } from "../config/design";
@@ -61,6 +63,8 @@ export function createProject(s: GameState, input: ProjectInput) {
     s.company.bankrupt
   )
     throw new Error("Prüfe Budget, Plattformen und verfügbare Teammitglieder.");
+  if (s.company.office < spec.office)
+    throw new Error(`${spec.label} ist ab dem Büro „${OFFICES[spec.office].name}“ möglich.`);
   const sequel = input.sequelOf ? sequelPlan(s, input.sequelOf) : null;
   if (input.sequelOf && (!sequel || !sequel.eligible || sequel.base.genre !== input.genre))
     throw new Error("Eine Fortsetzung braucht ein Original mit mindestens 6,0 im selben Genre.");
@@ -86,6 +90,8 @@ export function createProject(s: GameState, input: ProjectInput) {
     quality: 0,
     bugs: 0,
     hype: clamp(techEffects(s).hype + (sequel?.hype ?? 0) + (publisher?.hype ?? 0)),
+    priceFactor: PRICE_STEPS.includes(input.priceFactor ?? 1) ? input.priceFactor : undefined,
+    campaigns: 0,
     phase: "Konzept",
     points: {
       design: 0,
@@ -214,12 +220,16 @@ export function release(s: GameState, id: string) {
     releasedDay: s.day,
     units: 0,
     revenue: 0,
-    price: SIZES[p.size].price,
+    price: Math.round(
+      SIZES[p.size].price *
+        (PRICE_STEPS.includes(p.priceFactor ?? 1) ? (p.priceFactor ?? 1) : 1),
+    ),
     patched: false,
     salesHistory: [],
     salesHistoryStartDay: s.day + 1,
   });
   s.projects = s.projects.filter((project) => project.id !== id);
+  pruneArchive(s);
   s.company.reputation = clamp(
     s.company.reputation + (score - 5) * 1.2 * SIZES[p.size].fame,
   );

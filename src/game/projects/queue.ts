@@ -1,10 +1,20 @@
 import type {
   GameState,
   Genre,
+  MarketingPlan,
   ProductionQueueEntry,
   ProjectInput,
 } from "../types";
-import { BALANCE, GENRES, PLATFORMS, SIZES, THEMES } from "../config/balance";
+import {
+  BALANCE,
+  GENRES,
+  OFFICES,
+  PLATFORMS,
+  SIZES,
+  THEMES,
+} from "../config/balance";
+import { PRICE_STEPS } from "./pricing";
+import { MARKETING_KEYS } from "../marketing/campaigns";
 import { isAssigned } from "../employees/assignment";
 import { isAvailable } from "../market/platforms";
 import { resolvePublisher } from "../contracts/contracts";
@@ -51,7 +61,11 @@ export function validQueuedInput(v: unknown): v is ProjectInput {
       !["focused", "balanced", "experimental"].includes(
         v.ambition as string,
       )) ||
-    (v.sequelOf !== undefined && typeof v.sequelOf !== "string")
+    (v.sequelOf !== undefined && typeof v.sequelOf !== "string") ||
+    (v.priceFactor !== undefined &&
+      !PRICE_STEPS.includes(v.priceFactor as number)) ||
+    (v.marketing !== undefined &&
+      !MARKETING_KEYS.includes(v.marketing as MarketingPlan))
   )
     return false;
   if (v.publisher !== undefined) {
@@ -162,6 +176,12 @@ export function productionQueueStatus(
     );
   if (!s.engines.some((engine) => engine.id === input.engine))
     return status("blocked", "Engine fehlt");
+  if (s.company.office < SIZES[input.size].office)
+    return status(
+      "blocked",
+      "Büro zu klein",
+      `${SIZES[input.size].label} braucht mindestens das Büro „${OFFICES[SIZES[input.size].office].name}“.`,
+    );
   if (!input.platforms.every((id) => isAvailable(s, id)))
     return status(
       "blocked",

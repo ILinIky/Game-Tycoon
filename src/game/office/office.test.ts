@@ -13,6 +13,7 @@ import {
   removeFacility,
 } from "./office";
 import type { ProjectInput } from "../types";
+import { SIZES } from "../config/balance";
 
 const input: ProjectInput = {
   name: "Orbital Letters",
@@ -99,7 +100,7 @@ describe("Büro und Wirtschaft", () => {
         reviews: [],
         units: 0,
         revenue: 0,
-        price: { Indie: 15, Small: 25, Medium: 39, AAA: 55 }[size],
+        price: SIZES[size].price,
         patched: false,
       });
       s.projects = [];
