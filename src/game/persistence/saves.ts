@@ -376,8 +376,56 @@ function database(): Promise<IDBDatabase> {
     request.onerror = () => reject(request.error);
   });
 }
+type PackedHistory = {
+  day: Float64Array;
+  units: Float64Array;
+  revenue: Float64Array;
+};
+
+/**
+ * Sales histories are stored as number columns: copying three typed arrays
+ * into IndexedDB is several times faster than tens of thousands of objects,
+ * which keeps autosaves from stalling the game.
+ */
+export function packState(state: GameState) {
+  return {
+    ...state,
+    games: state.games.map((g) => {
+      const { salesHistory, ...rest } = g;
+      if (!salesHistory) return rest;
+      const packed: PackedHistory = {
+        day: Float64Array.from(salesHistory, (r) => r.day),
+        units: Float64Array.from(salesHistory, (r) => r.units),
+        revenue: Float64Array.from(salesHistory, (r) => r.revenue),
+      };
+      return { ...rest, packedHistory: packed };
+    }),
+  };
+}
+
+export function unpackState(state: unknown) {
+  if (!object(state) || !Array.isArray(state.games)) return state;
+  return {
+    ...state,
+    games: state.games.map((g: unknown) => {
+      if (!object(g) || !object(g.packedHistory)) return g;
+      const { packedHistory, ...rest } = g;
+      const p = packedHistory as PackedHistory;
+      return {
+        ...rest,
+        salesHistory: Array.from(p.day, (day, i) => ({
+          day,
+          units: p.units[i],
+          revenue: p.revenue[i],
+        })),
+      };
+    }),
+  };
+}
+
 export async function saveSlot(slot: string, state: GameState) {
-  const payload = { savedAt: new Date().toISOString(), state };
+  const savedAt = new Date().toISOString();
+  const payload = { savedAt, state: packState(state), packed: true };
   try {
     const db = await database();
     await new Promise<void>((resolve, reject) => {
@@ -388,7 +436,10 @@ export async function saveSlot(slot: string, state: GameState) {
     });
     db.close();
   } catch {
-    localStorage.setItem(`studio-zero-${slot}`, JSON.stringify(payload));
+    localStorage.setItem(
+      `studio-zero-${slot}`,
+      JSON.stringify({ savedAt, state }),
+    );
   }
 }
 export async function loadSlot(
@@ -413,7 +464,12 @@ export async function loadSlot(
   if (!payload) return null;
   if (!object(payload) || typeof payload.savedAt !== "string")
     throw new Error("Der Spielstand ist beschädigt.");
-  return { state: validateSave(payload.state), savedAt: payload.savedAt };
+  return {
+    state: validateSave(
+      payload.packed ? unpackState(payload.state) : payload.state,
+    ),
+    savedAt: payload.savedAt,
+  };
 }
 
 /**

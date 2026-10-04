@@ -41,7 +41,8 @@ export default function StudioWorld({
     const el = canvas.current,
       container = host.current;
     if (!el || !container) return;
-    const ctx = el.getContext("2d");
+    // The scene always paints its full background, so the canvas is opaque.
+    const ctx = el.getContext("2d", { alpha: false });
     if (!ctx) return;
     let w = 0,
       h = 0,
@@ -49,7 +50,15 @@ export default function StudioWorld({
       last = 0,
       time = 0,
       ambienceTime = 0,
-      lastPaint = 0;
+      lastPaint = 0,
+      // Ambient repaint interval; grows when the device cannot keep up.
+      budget = 33,
+      pace = 16,
+      // Render resolution steps down on devices that cannot keep up.
+      quality = 0,
+      checked = 0,
+      smooth = 0;
+    const QUALITY = [1, 0.8, 0.65];
     let painted: {
       game: typeof game;
       selected: string | null;
@@ -63,7 +72,9 @@ export default function StudioWorld({
       const rect = container.getBoundingClientRect();
       w = rect.width;
       h = rect.height;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      // Above 1.5× the extra pixels cost far more than they add.
+      const dpr =
+        Math.min(1.5, window.devicePixelRatio || 1) * QUALITY[quality];
       el.width = w * dpr;
       el.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -74,7 +85,33 @@ export default function StudioWorld({
     resize();
     const draw = (stamp: number) => {
       const data = current.current;
-      const moving = data.animated && !document.hidden;
+      // Behind open menus the office stays still: no ambient repaints.
+      const moving =
+        data.animated &&
+        !document.hidden &&
+        (!data.blocked || data.titleScreen);
+      if (last) {
+        pace = pace * 0.9 + Math.min(250, stamp - last) * 0.1;
+        const base = w < 720 ? 40 : 33;
+        budget =
+          pace > 40
+            ? Math.min(100, budget + 2)
+            : pace < 22
+              ? Math.max(base, budget - 1)
+              : budget;
+        if (stamp - checked > 2000) {
+          checked = stamp;
+          if (pace > 55 && budget >= 60 && quality < QUALITY.length - 1) {
+            quality++;
+            smooth = 0;
+            resize();
+          } else if (pace < 24 && quality > 0 && ++smooth >= 3) {
+            quality--;
+            smooth = 0;
+            resize();
+          }
+        }
+      }
       if (last && moving) {
         const delta = Math.min(0.05, (stamp - last) / 1000);
         ambienceTime += delta;
@@ -92,7 +129,7 @@ export default function StudioWorld({
         painted.y !== cam.y ||
         painted.zoom !== cam.zoom ||
         painted.titleScreen !== data.titleScreen;
-      if (changed || (moving && stamp - lastPaint >= (w < 720 ? 33 : 16))) {
+      if (changed || (moving && stamp - lastPaint >= budget)) {
         const viewCamera = {
           ...cam,
           zoom: cam.zoom * (data.titleScreen || w < 720 ? 1 : 0.84),

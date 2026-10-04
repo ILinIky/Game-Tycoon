@@ -28,9 +28,10 @@ import { payHoldings } from "../market/holdings";
 import { autoMarketing } from "../marketing/campaigns";
 import { expoTick } from "../marketing/expo";
 import { yearTick } from "../progress/yearly";
+import { cloneState } from "../state";
 export function tick(source: GameState): GameState {
   if (!source.company.founded || source.company.bankrupt) return source;
-  const s = structuredClone(source);
+  const s = cloneState(source);
   s.day++;
   if (s.day > 1 && s.day % 30 === 1)
     s.finances.push({

@@ -393,13 +393,20 @@
   background: linear-gradient(90deg, #6aa993, #c3ddad);
   position: relative;
 }
+/* The shine moves via transform, so it never triggers layout or paint. */
 .game-root .progress > div::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, #ffffff55, transparent);
-  width: 40px;
+  background: linear-gradient(90deg, transparent, #ffffff55, transparent)
+    no-repeat;
+  background-size: 40px 100%;
+  transform: translateX(-40px);
   animation: progress-glow 2.5s ease-in-out infinite;
+}
+/* Skill bars appear by the hundred in team lists; they stay calm. */
+.game-root .skill-bar .progress > div::after {
+  content: none;
 }
 .world-inspector {
   border-radius: 10px 3px 10px 3px;
@@ -899,7 +906,7 @@
 @keyframes button-glint {
   0%,
   68% {
-    left: -90px;
+    transform: translateX(0) rotate(22deg);
     opacity: 0;
   }
   72% {
@@ -907,7 +914,7 @@
   }
   90%,
   100% {
-    left: 130%;
+    transform: translateX(420px) rotate(22deg);
     opacity: 0;
   }
 }
@@ -927,10 +934,10 @@
 }
 @keyframes progress-glow {
   from {
-    left: -50px;
+    transform: translateX(-40px);
   }
   to {
-    left: 100%;
+    transform: translateX(100%);
   }
 }
 @keyframes orbit-turn {

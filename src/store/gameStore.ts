@@ -17,6 +17,7 @@ import {
 } from "../game/employees/perks";
 import type { BoothSize } from "../game/types";
 import { create } from "zustand";
+import { cloneState } from "../game/state";
 import {
   loanAmount,
   loanLimit,
@@ -123,7 +124,7 @@ type Store = {
 export const useGame = create<Store>((set, get) => {
   const change = (fn: (s: GameState) => void) => {
     try {
-      const s = structuredClone(get().game);
+      const s = cloneState(get().game);
       if (s.company.bankrupt)
         throw new Error(
           "Das Studio ist zahlungsunfähig. Lade einen Spielstand oder starte neu.",

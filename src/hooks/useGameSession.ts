@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { GameState } from "../game/types";
 import { useGame } from "../store/gameStore";
 import { BALANCE } from "../game/config/balance";
 import { loadSlot, saveSlot } from "../game/persistence/saves";
@@ -7,6 +8,7 @@ export function useGameSession(blocked: boolean) {
   const { game, hydrated, hydrate, advance } = useGame();
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const lastPeriodic = useRef<GameState | null>(null);
   useEffect(() => {
     let active = true;
     void loadSlot("autosave")
@@ -66,7 +68,11 @@ export function useGameSession(blocked: boolean) {
   useEffect(() => {
     if (!hydrated) return;
     const timer = window.setInterval(() => {
-      void saveSlot("autosave", useGame.getState().game)
+      const current = useGame.getState().game;
+      // Nothing changed since the last periodic save (e.g. paused game).
+      if (current === lastPeriodic.current) return;
+      lastPeriodic.current = current;
+      void saveSlot("autosave", current)
         .then(() => setSaved(true))
         .catch(() => {
           setSaved(false);

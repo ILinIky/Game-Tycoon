@@ -322,6 +322,91 @@ function seated(
   p.ellipse(mouseHand, 3.6, 2.7, shade(skin, 1.05));
   p.ellipse(nearShoulder, 4.2, 3.6, shade(shirt, 1.02));
 }
+// --- Cached layers ----------------------------------------------------------
+// Gradients are expensive to rasterise on every frame, especially in large
+// offices. Static ones are painted once into small offscreen canvases.
+
+let glowCanvas: HTMLCanvasElement | null = null;
+/** Monitor glow as a reusable sprite; drawn with globalAlpha for flicker. */
+function glowSprite() {
+  if (glowCanvas) return glowCanvas;
+  const size = 64;
+  glowCanvas = document.createElement("canvas");
+  glowCanvas.width = glowCanvas.height = size;
+  const g = glowCanvas.getContext("2d")!;
+  const gradient = g.createRadialGradient(size / 2, size / 2, 1, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, "rgba(145,220,197,1)");
+  gradient.addColorStop(1, "rgba(145,203,181,0)");
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, size, size);
+  return glowCanvas;
+}
+
+let sky: {
+  canvas: HTMLCanvasElement;
+  key: string;
+  time: number;
+} | null = null;
+/**
+ * Sky, clouds, skyline and night mood fill the whole screen with several
+ * gradients. They move slowly, so a cached copy is refreshed a few times per
+ * second instead of being repainted on every frame.
+ */
+function skyLayer(
+  c: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  t: number,
+  day: number,
+) {
+  const ratio = c.getTransform().a || 1;
+  const key = `${Math.round(w)}x${Math.round(h)}@${ratio}:${day}`;
+  if (sky && sky.key === key && Math.abs(t - sky.time) < 0.25) return sky.canvas;
+  const canvas = sky?.canvas ?? document.createElement("canvas");
+  if (sky?.key !== key) {
+    canvas.width = Math.max(1, Math.round(w * ratio));
+    canvas.height = Math.max(1, Math.round(h * ratio));
+  }
+  const g = canvas.getContext("2d")!;
+  g.setTransform(ratio, 0, 0, ratio, 0, 0);
+  g.clearRect(0, 0, w, h);
+  paintSky(g, w, h, t);
+  skyMood(g, w, h, t);
+  // Soft light over the room, part of the cached background.
+  const glow = g.createRadialGradient(w * 0.46, h * 0.39, 0, w * 0.46, h * 0.4, w * 0.57);
+  glow.addColorStop(0, "#b0ba8e19");
+  glow.addColorStop(1, "#b0ba8e00");
+  g.fillStyle = glow;
+  g.fillRect(0, 0, w, h);
+  sky = { canvas, key, time: t };
+  return canvas;
+}
+
+const layers = new Map<string, HTMLCanvasElement>();
+/** Full-screen gradient layers, repainted only when the view size changes. */
+function screenLayer(
+  name: string,
+  w: number,
+  h: number,
+  ratio: number,
+  paint: (g: CanvasRenderingContext2D) => void,
+) {
+  const key = `${name}:${Math.round(w)}x${Math.round(h)}@${ratio}`;
+  let layer = layers.get(key);
+  if (!layer) {
+    for (const k of layers.keys()) if (k.startsWith(`${name}:`)) layers.delete(k);
+    layer = document.createElement("canvas");
+    // Same pixel size as the main canvas: a 1:1 copy needs no filtering.
+    layer.width = Math.max(1, Math.round(w * ratio));
+    layer.height = Math.max(1, Math.round(h * ratio));
+    const g = layer.getContext("2d")!;
+    g.scale(ratio, ratio);
+    paint(g);
+    layers.set(key, layer);
+  }
+  return layer;
+}
+
 /**
  * Installed facilities appear as props along the left wall, facing the room.
  * Footprint roughly 0.7 × 0.75 tiles starting at (x, y).
@@ -504,19 +589,8 @@ function desk(
     ],
     "#18373b",
   );
-  const glow = p.ctx.createRadialGradient(
-    p.point(x + 0.62, y + 0.35, 77).x,
-    p.point(x + 0.62, y + 0.35, 77).y,
-    1,
-    p.point(x + 0.62, y + 0.35, 77).x,
-    p.point(x + 0.62, y + 0.35, 77).y,
-    26 * p.scale,
-  );
-  glow.addColorStop(
-    0,
-    `rgba(145,220,197,${0.16 + Math.sin(ambienceTime * 1.6 + x) * 0.035})`,
-  );
-  glow.addColorStop(1, "#91cbb500");
+  const glowCenter = p.point(x + 0.62, y + 0.35, 77);
+  const glowRadius = 26 * p.scale;
   if (employee)
     addLight(
       p.point(x + 0.62, y + 0.35, 77),
@@ -524,13 +598,17 @@ function desk(
       engineDev ? "235,200,130" : "140,220,195",
       working ? 0.75 : 0.35,
     );
-  p.ctx.fillStyle = glow;
-  p.ctx.fillRect(
-    p.point(x + 0.15, y + 0.1, 104).x,
-    p.point(x + 0.15, y + 0.1, 104).y,
-    75 * p.scale,
-    70 * p.scale,
+  // A cached glow sprite replaces a new radial gradient per desk and frame.
+  p.ctx.save();
+  p.ctx.globalAlpha = 0.16 + Math.sin(ambienceTime * 1.6 + x) * 0.035;
+  p.ctx.drawImage(
+    glowSprite(),
+    glowCenter.x - glowRadius,
+    glowCenter.y - glowRadius,
+    glowRadius * 2,
+    glowRadius * 2,
   );
+  p.ctx.restore();
   if (engineDev) {
     // Rotating gear on the CRT while the employee builds the engine.
     const g = p.point(x + 0.615, y + 0.326, 75);
@@ -773,20 +851,7 @@ export function renderStudio(
     celebrateUntil = ambienceTime + 6;
   lastRelease = newest?.id;
   celebrating = ambienceTime < celebrateUntil;
-  paintSky(c, w, h, ambienceTime);
-  skyMood(c, w, h, ambienceTime);
-  const glow = c.createRadialGradient(
-    w * 0.46,
-    h * 0.39,
-    0,
-    w * 0.46,
-    h * 0.4,
-    w * 0.57,
-  );
-  glow.addColorStop(0, "#b0ba8e19");
-  glow.addColorStop(1, "#b0ba8e00");
-  c.fillStyle = glow;
-  c.fillRect(0, 0, w, h);
+  c.drawImage(skyLayer(c, w, h, ambienceTime, s.day), 0, 0, w, h);
   const level = s.company.office;
   const cols = [2, 3, 4, 6, 8, 10, 10, 10][level] ?? 10;
   const slots = OFFICES[level].capacity;
@@ -1112,17 +1177,25 @@ export function renderStudio(
   nightPass(c, w, h);
   if (celebrating) officeConfetti(c, w, h, ambienceTime);
   motes(c, w, h, ambienceTime);
-  const vignette = c.createRadialGradient(
-    w / 2,
-    h * 0.45,
-    w * 0.2,
-    w / 2,
-    h * 0.45,
-    w * 0.72,
+  c.drawImage(
+    screenLayer("vignette", w, h, c.getTransform().a || 1, (g) => {
+      const vignette = g.createRadialGradient(
+        w / 2,
+        h * 0.45,
+        w * 0.2,
+        w / 2,
+        h * 0.45,
+        w * 0.72,
+      );
+      vignette.addColorStop(0, "#09181f00");
+      vignette.addColorStop(1, "#08192377");
+      g.fillStyle = vignette;
+      g.fillRect(0, 0, w, h);
+    }),
+    0,
+    0,
+    w,
+    h,
   );
-  vignette.addColorStop(0, "#09181f00");
-  vignette.addColorStop(1, "#08192377");
-  c.fillStyle = vignette;
-  c.fillRect(0, 0, w, h);
   return hits;
 }

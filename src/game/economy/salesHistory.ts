@@ -36,14 +36,21 @@ export function recordSales(
   units: number,
   revenue: number,
 ) {
-  game.salesHistory ??= [];
   game.salesHistoryStartDay ??= day;
-  const last = game.salesHistory.at(-1);
-  if (last?.day === day) {
-    last.units += units;
-    last.revenue += revenue;
-  } else game.salesHistory.push({ day, units, revenue });
-  game.salesHistory = game.salesHistory.slice(-BALANCE.salesHistoryDays);
+  // Copy-on-write: state copies share history arrays (see cloneState).
+  const history = game.salesHistory ?? [];
+  const last = history.at(-1);
+  const next =
+    last?.day === day
+      ? [
+          ...history.slice(0, -1),
+          { day, units: last.units + units, revenue: last.revenue + revenue },
+        ]
+      : [...history, { day, units, revenue }];
+  game.salesHistory =
+    next.length > BALANCE.salesHistoryDays
+      ? next.slice(-BALANCE.salesHistoryDays)
+      : next;
 }
 
 export interface SalesPoint {
