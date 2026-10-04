@@ -194,10 +194,10 @@ function seated(
 ) {
   const seed = hash(e.id);
   const skin = SKIN[seed % SKIN.length];
-  const hair = HAIR[(seed >> 3) % HAIR.length];
-  const pants = PANTS[(seed >> 5) % PANTS.length];
+  const hair = HAIR[(seed >>> 3) % HAIR.length];
+  const pants = PANTS[(seed >>> 5) % PANTS.length];
   const shirt = roleColor[e.role];
-  const style = (seed >> 7) % 3;
+  const style = (seed >>> 7) % 3;
   const phase = t * 0.9 + (seed % 8);
   const breathe = Math.sin(phase * 2) * 0.6;
   const lean = working ? -0.05 + Math.sin(phase * 0.6) * 0.008 : 0.015;
@@ -791,7 +791,7 @@ function strolling(
   c.translate(q.x, q.y);
   c.scale(p.scale, p.scale);
   c.lineCap = "round";
-  c.strokeStyle = PANTS[(seed >> 5) % PANTS.length];
+  c.strokeStyle = PANTS[(seed >>> 5) % PANTS.length];
   c.lineWidth = 7;
   c.beginPath();
   c.moveTo(-5, -24);
@@ -820,7 +820,7 @@ function strolling(
   c.beginPath();
   c.ellipse(0, -59, 8, 9, 0, 0, Math.PI * 2);
   c.fill();
-  c.fillStyle = HAIR[(seed >> 3) % HAIR.length];
+  c.fillStyle = HAIR[(seed >>> 3) % HAIR.length];
   c.beginPath();
   c.ellipse(0, -63, 8.6, 6, 0, Math.PI, Math.PI * 2);
   c.ellipse(-4, -61, 4.5, 5, 0, 0, Math.PI * 2);

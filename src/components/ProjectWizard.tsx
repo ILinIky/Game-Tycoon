@@ -1,7 +1,10 @@
 import { sequelPlan, SEQUEL_MIN_SCORE } from "../game/projects/franchise";
 import { publisherOffers } from "../game/contracts/contracts";
+import { EXCLUSIVE_BONUS } from "../game/hardware/consoles";
 import {
+  allPlatforms,
   availablePlatforms,
+  isOwnPlatform,
   platformShare,
   platformStatus,
 } from "../game/market/platforms";
@@ -31,7 +34,6 @@ import {
   BALANCE,
   GENRES,
   THEMES,
-  PLATFORMS,
   OFFICES,
   SIZES,
   sizeLabel,
@@ -278,7 +280,8 @@ export default function ProjectWizard({
                   {plan.platforms
                     .map(
                       (id) =>
-                        PLATFORMS.find((platform) => platform.id === id)?.name,
+                        allPlatforms(s).find((platform) => platform.id === id)
+                          ?.name,
                     )
                     .join(", ")}{" "}
                   · Team:{" "}
@@ -658,10 +661,17 @@ export default function ProjectWizard({
                     <strong>{p.name}</strong>
                     <span>
                       {Math.round(platformShare(p, s.day))} Marktgewicht ·{" "}
-                      {s.licenses.includes(p.id)
-                        ? "Lizenziert"
-                        : money(scaled(s, p.license))}
+                      {isOwnPlatform(p.id)
+                        ? "Eigene Konsole"
+                        : s.licenses.includes(p.id)
+                          ? "Lizenziert"
+                          : money(scaled(s, p.license))}
                     </span>
+                    {isOwnPlatform(p.id) && (
+                      <em className="platform-tag launch">
+                        Exklusiv +{Math.round(EXCLUSIVE_BONUS * 100)} %
+                      </em>
+                    )}
                     {platformStatus(p, s.day) === "launch" && (
                       <em className="platform-tag launch">
                         Launch-Titel +30 %

@@ -50,16 +50,26 @@ export function releaseRivalGame(s: GameState, c: Competitor) {
   const sizes = Object.keys(SIZES) as RivalGame["size"][];
   const max = Math.min(3, Math.floor(strength / 2 + (year - 1990) / 8));
   const size = sizes[Math.min(max, Math.floor(random(s) * (max + 1)))];
+  const trend = s.market.trend;
+  const copying =
+    !!trend && trend.until >= s.day && trend.studios.includes(c.name);
   const game: RivalGame = {
     id: uid(s, "rival"),
     title: rivalTitle(s),
     studio: c.name,
-    genre: weightedGenre(s),
+    genre: copying ? trend!.genre : weightedGenre(s),
     size,
     score: Math.round(clamp(5 + strength * 0.55 + (random(s) - 0.5) * 3, 3, 9.6) * 10) / 10,
     releasedDay: s.day,
   };
   s.market.rivalGames = [game, ...(s.market.rivalGames ?? [])].slice(0, 60);
+  // Copycats crowd the genre the player just made popular.
+  if (copying)
+    s.market.popularity[game.genre] = clamp(
+      s.market.popularity[game.genre] - 1.5,
+      25,
+      95,
+    );
   c.releases++;
   c.revenue += nice(rivalWeekly(game, s.day) * 14 * SIZES[size].price * 0.7);
   return game;
@@ -130,7 +140,11 @@ export function rivalsTick(s: GameState) {
   const year = date(s.day).getUTCFullYear();
   // Studios founded up to this year join (also for older saves).
   for (const r of NEW_RIVALS)
-    if (r.founded <= year && !s.market.competitors.some((c) => c.name === r.name)) {
+    if (
+      r.founded <= year &&
+      !s.market.competitors.some((c) => c.name === r.name) &&
+      !s.market.defunct?.includes(r.name)
+    ) {
       s.market.competitors.push({ ...r });
       if (r.founded === year)
         notify(s, "Neues Studio am Markt", `${r.name} wurde gegründet und will in die Charts.`);
@@ -148,6 +162,129 @@ export function rivalsTick(s: GameState) {
     for (const c of activeRivals(s))
       if (random(s) < 0.45 + strengthOf(c) * 0.1) releaseRivalGame(s, c);
   if (s.day % 7 === 0) updateCharts(s);
+  if (s.day % 365 === 180) rivalMergers(s);
+  if (s.day % 30 === 15) hostileBid(s);
+}
+
+/** After a hit, one or two rivals copy its genre for half a year. */
+export function rivalsCopy(s: GameState, genre: Genre, title: string) {
+  const rivals = activeRivals(s);
+  if (!rivals.length) return;
+  const count = Math.min(rivals.length, random(s) < 0.5 ? 1 : 2);
+  const studios = [...rivals]
+    .sort(() => random(s) - 0.5)
+    .slice(0, count)
+    .map((c) => c.name);
+  s.market.trend = { genre, until: s.day + 180, studios };
+  notify(
+    s,
+    "Nachahmer im Anmarsch",
+    `${studios.join(" und ")} ${studios.length > 1 ? "wollen" : "will"} vom Erfolg von ${title} profitieren und ${studios.length > 1 ? "kündigen" : "kündigt"} eigene ${genre}-Spiele an. Das Genre wird härter umkämpft.`,
+    "warning",
+  );
+}
+
+/** Rival studios merge over the years and get stronger. */
+export function rivalMergers(s: GameState) {
+  const rivals = activeRivals(s);
+  if (rivals.length < 4 || random(s) > 0.35) return;
+  const sorted = [...rivals].sort(
+    (a, b) => (b.strength ?? 2) - (a.strength ?? 2) || b.revenue - a.revenue,
+  );
+  const buyer = sorted[Math.floor(random(s) * 2)];
+  const target = sorted
+    .filter((c) => c !== buyer)
+    .at(-1 - Math.floor(random(s) * 2))!;
+  buyer.strength = Math.min(5, (buyer.strength ?? 2) + 1);
+  buyer.revenue += target.revenue;
+  buyer.releases += target.releases;
+  s.market.competitors = s.market.competitors.filter((c) => c !== target);
+  s.market.defunct = [...(s.market.defunct ?? []), target.name];
+  notify(
+    s,
+    "Fusion in der Branche",
+    `${buyer.name} übernimmt ${target.name} und wird zum noch stärkeren Konkurrenten.`,
+  );
+}
+
+/**
+ * Strong rivals try to buy into a listed group whose share price is weak and
+ * whose founder holds less than 60 %. The player can defend with a buyback.
+ */
+export function hostileBid(s: GameState) {
+  const stock = s.stock;
+  if (!stock || stock.rival) return;
+  if (s.events.some((e) => e.decision === "takeover")) return;
+  const stake = stock.owned / stock.shares;
+  if (stake >= 0.6 || stock.sentiment > 0.9 || random(s) > 0.25) return;
+  const rival = [...activeRivals(s)].sort(
+    (a, b) => (b.strength ?? 2) - (a.strength ?? 2),
+  )[0];
+  if (!rival) return;
+  notify(
+    s,
+    "Feindliche Übernahme droht",
+    `${rival.name} kauft heimlich Aktien deiner Group auf und will 15 % übernehmen. Mit einem Abwehr-Rückkauf (15 % Aufschlag) sicherst du die Anteile, sonst sitzt ${rival.name} künftig mit am Tisch und verlangt eine Sonderdividende.`,
+    "warning",
+    "takeover",
+  );
+  s.events[0].target = rival.name;
+  s.speed = 0;
+}
+
+export const takeoverDefenseCost = (s: GameState) =>
+  s.stock ? Math.round(s.stock.shares * 0.15 * s.stock.price * 1.15) : 0;
+
+export function resolveTakeover(s: GameState, eventId: string, defend: boolean) {
+  const event = s.events.find((e) => e.id === eventId);
+  const stock = s.stock;
+  if (!event || event.decision !== "takeover") return;
+  delete event.decision;
+  event.read = true;
+  if (!stock) return;
+  const rival = event.target ?? "Ein Konkurrent";
+  const amount = Math.round(stock.shares * 0.15);
+  if (defend) {
+    const cost = takeoverDefenseCost(s);
+    if (s.company.cash < cost) throw new Error("Für die Abwehr fehlt Kapital.");
+    s.company.cash -= cost;
+    stock.shares -= amount;
+    stock.sentiment = clamp(stock.sentiment + 0.05, 0.5, 1.8);
+    notify(s, "Übernahme abgewehrt", `${rival} geht leer aus. Du hältst jetzt ${Math.round((stock.owned / stock.shares) * 100)} %.`, "success");
+  } else {
+    stock.rivalStake += amount;
+    stock.rival = rival;
+    stock.sentiment = clamp(stock.sentiment - 0.05, 0.5, 1.8);
+    notify(s, "Neuer Großaktionär", `${rival} hält jetzt 15 % deiner Group und kassiert monatlich eine Sonderdividende. Kaufe die Anteile im Börsenbereich zurück.`, "warning");
+  }
+}
+
+/** Monthly special dividend for a hostile shareholder. */
+export function payRivalDividend(s: GameState) {
+  const stock = s.stock;
+  if (!stock?.rivalStake) return 0;
+  const revenue = s.finances.at(-2)?.revenue ?? 0;
+  const pay = Math.round(revenue * (stock.rivalStake / stock.shares) * 0.5);
+  if (pay <= 0) return 0;
+  s.company.cash -= pay;
+  s.finances.at(-1)!.expenses += pay;
+  return pay;
+}
+
+export const rivalStakeCost = (s: GameState) =>
+  s.stock ? Math.round(s.stock.rivalStake * s.stock.price * 1.2) : 0;
+
+/** Buys back the hostile rival's stake at a 20 % premium. */
+export function buyOutRival(s: GameState) {
+  const stock = s.stock;
+  if (!stock?.rivalStake) throw new Error("Kein Konkurrent hält Anteile.");
+  const cost = rivalStakeCost(s);
+  if (s.company.cash < cost) throw new Error("Für den Rückkauf fehlt Kapital.");
+  s.company.cash -= cost;
+  stock.shares -= stock.rivalStake;
+  notify(s, "Anteile zurückgekauft", `${stock.rival} ist nicht mehr an deiner Group beteiligt.`, "success");
+  stock.rivalStake = 0;
+  stock.rival = undefined;
 }
 
 // --- Übernahmen -----------------------------------------------------------

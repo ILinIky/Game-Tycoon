@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useGame } from "../../store/gameStore";
-import { PLATFORMS } from "../../game/config/platforms";
 import {
+  allPlatforms,
   platformShare,
   platformStatus,
   STATUS_LABEL,
@@ -38,12 +38,15 @@ import {
 } from "../../game/market/holdings";
 import {
   affordableCompanies,
+  catalog,
   cheapestCompanies,
   companyOffer,
   searchCompanies,
   type Acquirable,
 } from "../../game/market/companyMarket";
-import { countryLabel, realCompanies } from "../../game/leaderboard";
+import { countryLabel } from "../../game/leaderboard";
+import { priceTrend } from "../../game/market/marketCycle";
+import { swapBlocker, swapShares } from "../../game/market/stock";
 import GroupPortfolio, { compactEuro } from "../game/GroupPortfolio";
 import { useState } from "react";
 import { scaled } from "../../game/economy/scale";
@@ -66,7 +69,7 @@ function PlatformTimeline({ s }: { s: GameState }) {
   const to = from + 11;
   const span = to - from;
   const pos = (y: number) => `${((Math.min(Math.max(y, from), to) - from) / span) * 100}%`;
-  const rows = PLATFORMS.filter((p) => p.year - 1 <= to && (p.end ?? 9999) + 1 >= from);
+  const rows = allPlatforms(s).filter((p) => p.year - 1 <= to && (p.end ?? 9999) + 1 >= from);
   return (
     <Card className="platform-timeline">
       <PanelTitle title="Konsolen-Generationen" eyebrow="PLATTFORMEN IM WANDEL" />
@@ -229,6 +232,8 @@ function CompanyRow({ s, c }: { s: GameState; c: Acquirable }) {
   const price = offer.price;
   const owned = ownsCompany(s, c.id);
   const blocker = buyBlocker(s, offer);
+  const trend = priceTrend(c.id, s.day);
+  const swap = s.stock ? swapBlocker(s, offer) : null;
   const monthly = monthlyProfit({ id: c.id, sector: c.sector, value: price });
   const yieldRate = earningsYield(c.id, c.sector);
   return (
@@ -240,11 +245,19 @@ function CompanyRow({ s, c }: { s: GameState; c: Acquirable }) {
         <strong title={c.name}>{c.name}</strong>
         <small>
           {c.ticker} · {countryLabel(c.country)} · {c.sector}
+          {c.absorbed?.length ? ` · inkl. ${c.absorbed.join(", ")}` : ""}
         </small>
       </div>
       <div className="company-offer-figure">
         <small>Marktwert</small>
         <b title={money(price)}>{compactEuro(price)}</b>
+        <small className={trend >= 0 ? "trend-up" : "trend-down"}>
+          {trend >= 0 ? "▲" : "▼"}{" "}
+          {Math.abs(trend).toLocaleString("de-DE", {
+            maximumFractionDigits: 1,
+          })}{" "}
+          % in 30 Tagen
+        </small>
       </div>
       <div className="company-offer-figure profit">
         <small>Gewinn / Monat</small>
@@ -270,7 +283,17 @@ function CompanyRow({ s, c }: { s: GameState; c: Acquirable }) {
           >
             Übernehmen
           </Button>
-          {blocker && <small>{blocker}</small>}
+          {s.stock && (
+            <Button
+              secondary
+              disabled={!!swap}
+              onClick={() => store.mergeCompany(offer)}
+              detail={`${swapShares(s, price).toLocaleString("de-DE")} Aktien`}
+            >
+              Fusion
+            </Button>
+          )}
+          {(blocker && (!s.stock || swap)) && <small>{blocker}</small>}
         </div>
       )}
     </li>
@@ -279,7 +302,7 @@ function CompanyRow({ s, c }: { s: GameState; c: Acquirable }) {
 
 function AcquisitionsCard({ s }: { s: GameState }) {
   const [query, setQuery] = useState("");
-  const results = searchCompanies(query);
+  const results = searchCompanies(s, query);
   const affordable = affordableCompanies(s);
   const list = query.trim()
     ? results
@@ -290,7 +313,7 @@ function AcquisitionsCard({ s }: { s: GameState }) {
     <Card className="acquisitions-card">
       <PanelTitle
         title="Unternehmen übernehmen"
-        eyebrow={`${realCompanies.length} BÖRSENUNTERNEHMEN · ZUM MARKTWERT`}
+        eyebrow={`${catalog(s).length} BÖRSENUNTERNEHMEN · KURSE SCHWANKEN TÄGLICH`}
       />
       <label className="company-search">
         <Search size={15} />

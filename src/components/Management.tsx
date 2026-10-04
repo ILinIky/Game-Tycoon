@@ -14,6 +14,9 @@ const Finance = lazy(() => import("./views/Finance"));
 const Market = lazy(() => import("./views/Market"));
 const Statistics = lazy(() => import("./views/Statistics"));
 const GroupStats = lazy(() => import("./views/GroupStats"));
+const Stock = lazy(() => import("./views/Stock"));
+const Hardware = lazy(() => import("./views/Hardware"));
+const Achievements = lazy(() => import("./views/Achievements"));
 const Journal = lazy(() => import("./views/Journal"));
 const Company = lazy(() => import("./views/Company"));
 const Leaderboard = lazy(() => import("./views/Leaderboard"));
@@ -30,6 +33,9 @@ const views: Record<string, ComponentType<{ newProject: (sequelOf?: string) => v
   Markt: Market,
   Statistiken: Statistics,
   Group: GroupStats,
+  Börse: Stock,
+  Hardware: Hardware,
+  Erfolge: Achievements,
   Journal: Journal,
   Firma: Company,
   Weltrangliste: Leaderboard,
@@ -86,6 +92,18 @@ export default function Management({
       "Deine Geschichte in Zahlen.",
       "Jeder Release und jede Entscheidung hinterlassen ihre Spuren.",
     ],
+    Erfolge: [
+      "Jeder Meilenstein zählt.",
+      "Erfolge für Spiele, Studio, Wirtschaft und dein Imperium.",
+    ],
+    Hardware: [
+      "Deine eigene Plattform.",
+      "Entwickle eine Spielkonsole, verdiene an Lizenzen und veröffentliche Exklusivtitel.",
+    ],
+    Börse: [
+      "Dein Unternehmen an der Börse.",
+      "Börsengang, Aktienkurs, Quartalszahlen und Kontrolle über deine Group.",
+    ],
     Group: [
       "Mehr als ein Studio.",
       "Marktwert, Gewinne und Rang deiner Unternehmensgruppe.",
@@ -125,6 +143,9 @@ export default function Management({
                   Markt: "Die Spielebranche",
                   Statistiken: "Deine Studiogeschichte",
                   Group: "Statistik Group",
+                  Börse: "Aktie & Aktionäre",
+                  Hardware: "Das Hardware-Labor",
+                  Erfolge: "Deine Erfolge",
                   Firma: "Spielstand & Studio",
                   Journal: "Nachrichten aus dem Studio",
                 } as Record<string, string>

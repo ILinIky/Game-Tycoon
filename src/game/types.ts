@@ -267,6 +267,10 @@ export interface Market {
   popularity: Record<Genre, number>;
   competitors: Competitor[];
   rivalGames?: RivalGame[];
+  /** Rivals copying a genre after one of the player's hits. */
+  trend?: { genre: Genre; until: number; studios: string[] } | null;
+  /** Rival studios that were merged into others. */
+  defunct?: string[];
 }
 export type ContractFocus = "programming" | "design" | "art" | "audio";
 export interface ContractOffer {
@@ -341,14 +345,65 @@ export interface Holding {
   id: string;
   name: string;
   sector: string;
-  /** Market value in euros at the time of purchase. */
+  /** Snapshot market value in euros; the current value follows the market. */
   value: number;
+  /** Price actually paid (cash or shares). */
+  paid?: number;
+  /** Bought by share swap instead of cash. */
+  merged?: boolean;
   since: number;
   /** Profit paid out to the studio so far. */
   earned: number;
   /** Last monthly payout. */
   lastIncome?: number;
 }
+export interface StockState {
+  /** Shares outstanding. */
+  shares: number;
+  /** Shares held by the founder. */
+  owned: number;
+  /** Shares held by a hostile rival. */
+  rivalStake: number;
+  rival?: string;
+  price: number;
+  ipoDay: number;
+  ipoPrice: number;
+  /** Investor mood, multiplies the fundamental value (0.5–1.8). */
+  sentiment: number;
+  history: { day: number; price: number }[];
+  quarterStart: number;
+  /** Revenue the shareholders expect this quarter. */
+  target: number;
+  lastQuarter?: { day: number; revenue: number; target: number };
+}
+/** Merger of two real companies in the world ranking. */
+export interface Merger {
+  day: number;
+  acquirer: string;
+  target: string;
+}
+export interface ConsoleProject {
+  name: string;
+  generation: number;
+  team: string[];
+  work: number;
+  done: number;
+  budget: number;
+  started: number;
+}
+export interface OwnConsole {
+  id: string;
+  name: string;
+  generation: number;
+  launched: number;
+  /** Last day on the market. */
+  end: number;
+  power: number;
+  /** Consoles sold so far. */
+  installed: number;
+  licenseRevenue: number;
+}
+export type Difficulty = "easy" | "normal" | "hard";
 export interface RetiredGames {
   count: number;
   units: number;
@@ -387,7 +442,7 @@ export interface GameEvent {
   body: string;
   kind: "info" | "success" | "warning";
   read: boolean;
-  decision?: "raise" | "publisher" | "poach" | "salary";
+  decision?: "raise" | "publisher" | "poach" | "salary" | "takeover";
   /** Employee or object the decision refers to. */
   target?: string;
 }
@@ -450,6 +505,16 @@ export interface GameState {
   holdings?: Holding[];
   /** Totals of games removed from the archive (see MAX_ARCHIVED_GAMES). */
   retiredGames?: RetiredGames;
+  stock?: StockState | null;
+  mergers?: Merger[];
+  consoleProject?: ConsoleProject | null;
+  consoles?: OwnConsole[];
+  /** Unlocked achievements by id with the day of unlocking. */
+  achievements?: Record<string, number>;
+  difficulty?: Difficulty;
+  scenario?: string;
+  /** Index of the next tutorial step; null once finished or skipped. */
+  tutorial?: number | null;
   yearStats: YearStats;
   yearReviews: YearReview[];
 }

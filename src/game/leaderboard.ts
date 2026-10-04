@@ -1,6 +1,8 @@
 import snapshot from "./data/company-market-caps.json";
 import type { Company } from "./types";
 import { studioValuation } from "./economy/valuation";
+import { companyFactor } from "./market/marketCycle";
+import type { Merger } from "./types";
 
 export type RankingCurrency = "EUR" | "USD";
 export type Sector =
@@ -31,6 +33,14 @@ export interface RankedCompany {
   group?: boolean;
   /** Name of the player's group that owns this company. */
   memberOf?: string;
+  /** Companies this one has taken over in the game world. */
+  absorbed?: string[];
+}
+/** Day and owned companies for prices and mergers of the game world. */
+export interface RankingMarket {
+  day: number;
+  seed: number;
+  owned: string[];
 }
 /** The player's group as shown in the ranking. */
 export interface RankingGroup {
@@ -169,13 +179,99 @@ export const realCompanies: Omit<RankedCompany, "rank">[] =
     player: false,
   }));
 
+function seeded(seed: number) {
+  let x = seed >>> 0 || 1;
+  return () => {
+    x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
+    return x / 4294967296;
+  };
+}
+
+/**
+ * Mergers of real companies in the game world: two per year since 1991,
+ * derived from the save's seed so they stay the same on every load. Smaller
+ * companies are bought by bigger ones, preferably from the same sector.
+ * Companies owned by the player are never taken over.
+ */
+export function marketMergers({ day, seed, owned }: RankingMarket): Merger[] {
+  const year = new Date(Date.UTC(1990, 0, 1 + day)).getUTCFullYear();
+  const taken = new Set<string>();
+  const ownedSet = new Set(owned);
+  const sorted = [...realCompanies].sort((a, b) => b.valueUsd - a.valueUsd);
+  const mergers: Merger[] = [];
+  for (let y = 1991; y <= year; y++) {
+    const rng = seeded(seed ^ (y * 2654435761));
+    for (let n = 0; n < 2; n++) {
+      const mergerDay =
+        Math.round((Date.UTC(y, 0, 1) - Date.UTC(1990, 0, 1)) / 86400000) +
+        Math.floor(rng() * 360);
+      const acquirer = sorted[Math.floor(rng() * 300)];
+      const pool = sorted.filter(
+        (c) =>
+          c.id !== acquirer.id &&
+          !taken.has(c.id) &&
+          !ownedSet.has(c.id) &&
+          c.valueUsd < acquirer.valueUsd * 0.35 &&
+          c.valueUsd > acquirer.valueUsd * 0.01,
+      );
+      const sameSector = pool.filter((c) => c.sector === acquirer.sector);
+      const choices = sameSector.length ? sameSector : pool;
+      if (
+        !choices.length ||
+        taken.has(acquirer.id) ||
+        ownedSet.has(acquirer.id) ||
+        mergerDay > day
+      )
+        continue;
+      const target = choices[Math.floor(rng() * choices.length)];
+      taken.add(target.id);
+      mergers.push({
+        day: mergerDay,
+        acquirer: acquirer.id,
+        target: target.id,
+      });
+    }
+  }
+  return mergers.sort((a, b) => b.day - a.day);
+}
+
+/** Real companies with today's share prices and all mergers applied. */
+export function worldCompanies(market: RankingMarket) {
+  const mergers = marketMergers(market);
+  const gone = new Set(mergers.map((m) => m.target));
+  const byId = new Map(realCompanies.map((c) => [c.id, c]));
+  const extra = new Map<string, { value: number; names: string[] }>();
+  for (const m of [...mergers].reverse()) {
+    const target = byId.get(m.target)!;
+    const prior = extra.get(m.target);
+    const add = extra.get(m.acquirer) ?? { value: 0, names: [] };
+    add.value += target.valueUsd + (prior?.value ?? 0);
+    add.names.push(target.name);
+    extra.set(m.acquirer, add);
+  }
+  return realCompanies
+    .filter((c) => !gone.has(c.id))
+    .map((c) => {
+      const merged = extra.get(c.id);
+      const baseUsd = c.valueUsd + (merged?.value ?? 0);
+      return {
+        ...c,
+        baseUsd,
+        valueUsd: baseUsd * companyFactor(c.id, market.day),
+        ...(merged ? { absorbed: merged.names } : {}),
+      };
+    });
+}
+
 export function buildRanking(
   company: Company,
   group?: RankingGroup | null,
+  market?: RankingMarket,
 ): RankedCompany[] {
   const members = new Set(group?.members ?? []);
+  const companies = market ? worldCompanies(market) : realCompanies;
   const entries: Omit<RankedCompany, "rank">[] = [
-    ...realCompanies.map((entry) =>
+    ...companies.map((entry) =>
       group && members.has(entry.id)
         ? { ...entry, memberOf: group.name }
         : entry,
@@ -352,8 +448,9 @@ export function worldMilestone(entry: [number, string]): RankedCompany {
 export function worldNeighborhood(
   company: Company,
   group?: RankingGroup | null,
+  market?: RankingMarket,
 ): RankedCompany[] {
-  const ranking = buildRanking(company, group);
+  const ranking = buildRanking(company, group, market);
   const own = ranking.find((entry) => entry.player)!;
   const ownGroup = ranking.find((entry) => entry.group);
   const entries = [

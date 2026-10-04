@@ -17,7 +17,7 @@ import { PRICE_STEPS } from "./pricing";
 import { MARKETING_KEYS } from "../marketing/campaigns";
 import { validFeatures } from "../config/features";
 import { isAssigned } from "../employees/assignment";
-import { isAvailable } from "../market/platforms";
+import { isAvailable, isOwnPlatform } from "../market/platforms";
 import { resolvePublisher } from "../contracts/contracts";
 import { sequelPlan } from "./franchise";
 import { createProject, projectCost, release } from "./projects";
@@ -53,7 +53,9 @@ export function validQueuedInput(v: unknown): v is ProjectInput {
     !ids(v.team) ||
     v.team.length < size.team ||
     !ids(v.platforms) ||
-    !v.platforms.every((id) => PLATFORMS.some((p) => p.id === id)) ||
+    !v.platforms.every(
+      (id) => isOwnPlatform(id) || PLATFORMS.some((p) => p.id === id),
+    ) ||
     (v.designFocus !== undefined &&
       !["systems", "technology", "atmosphere"].includes(
         v.designFocus as string,

@@ -142,6 +142,7 @@ export function dismiss(s: GameState, id: string) {
   s.employees = s.employees.filter((x) => x.id !== id);
   for (const p of s.projects) p.team = p.team.filter((m) => m !== id);
   if (s.engineProject) s.engineProject.team = s.engineProject.team.filter((m) => m !== id);
+  if (s.consoleProject) s.consoleProject.team = s.consoleProject.team.filter((m) => m !== id);
   for (const c of s.contracts.active) c.team = c.team.filter((m) => m !== id);
   closeDecisions(s, id);
 }

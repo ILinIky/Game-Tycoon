@@ -1,7 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, Upload, Save, FolderOpen } from "lucide-react";
 import { useGame } from "../../store/gameStore";
-import { loadSlot, saveSlot, validateSave } from "../../game/persistence/saves";
+import {
+  loadSlot,
+  saveSlot,
+  slotMeta,
+  validateSave,
+} from "../../game/persistence/saves";
+import { dateLabel, money } from "../../game/utils";
+import { DIFFICULTIES, scenarioById } from "../../game/config/scenarios";
+import type { Difficulty } from "../../game/types";
+
+const SLOTS = [
+  "autosave",
+  "slot-1",
+  "slot-2",
+  "slot-3",
+  "slot-4",
+  "slot-5",
+  "slot-6",
+];
+
+/** Small JPEG of the office scene for the save list. */
+function capturePreview() {
+  const source = document.querySelector<HTMLCanvasElement>(
+    ".studio-world canvas",
+  );
+  if (!source || !source.width) return undefined;
+  const thumb = document.createElement("canvas");
+  thumb.width = 240;
+  thumb.height = Math.round((240 * source.height) / source.width);
+  thumb.getContext("2d")?.drawImage(source, 0, 0, thumb.width, thumb.height);
+  try {
+    return thumb.toDataURL("image/jpeg", 0.7);
+  } catch {
+    return undefined;
+  }
+}
 import { Button, Card, PanelTitle } from "../ui";
 export default function CompanyView() {
   const store = useGame();
@@ -9,7 +44,20 @@ export default function CompanyView() {
   const [companyName, setCompanyName] = useState(s.company.name);
   const [feedback, setFeedback] = useState("");
   const [confirmReset, setConfirmReset] = useState(false);
-  const [slotDates, setSlotDates] = useState<Record<string, string>>({});
+  const [slots, setSlots] = useState<
+    Record<string, Awaited<ReturnType<typeof slotMeta>>>
+  >({});
+  const refresh = async () => {
+    const entries = await Promise.all(
+      SLOTS.map(
+        async (slot) => [slot, await slotMeta(slot).catch(() => null)] as const,
+      ),
+    );
+    setSlots(Object.fromEntries(entries));
+  };
+  useEffect(() => {
+    void refresh();
+  }, []);
   const report = async (fn: () => Promise<void>) => {
     try {
       await fn();
@@ -38,7 +86,11 @@ export default function CompanyView() {
               Gründer<strong>{s.company.founder}</strong>
             </span>
             <span>
-              Gründung<strong>01. Januar 1990</strong>
+              Gründung<strong>{dateLabel(s.finances[0]?.day ?? 0)}</strong>
+            </span>
+            <span>
+              Schwierigkeit
+              <strong>{DIFFICULTIES[s.difficulty ?? "normal"].name}</strong>
             </span>
           </div>
         </Card>
@@ -68,56 +120,80 @@ export default function CompanyView() {
         <PanelTitle title="Spielstände" eyebrow="LOKALE SPIELSTÄNDE" />
         <p>
           Automatische Speicherung nach Änderungen. Beim Laden bleibt die Zeit
-          zunächst pausiert.
+          zunächst pausiert. Gespeicherte Slots zeigen ein Vorschaubild.
         </p>
-        {["autosave", "slot-1", "slot-2", "slot-3"].map((slot, i) => (
-          <div className="save-row" key={slot}>
-            <Save size={18} />
-            <div>
-              <strong>{i === 0 ? "Autosave" : `Spielstand ${i}`}</strong>
-              <small>
-                {slotDates[slot] ??
-                  (i === 0 ? "Wird automatisch gesichert" : "Lokal im Browser")}
-              </small>
-            </div>
-            {i > 0 && (
-              <button
-                className="icon-button"
-                aria-label={`Spielstand ${i} speichern`}
-                onClick={() =>
-                  void report(async () => {
-                    await saveSlot(slot, s);
-                    setSlotDates((d) => ({
-                      ...d,
-                      [slot]: new Date().toLocaleString("de-DE"),
-                    }));
-                    setFeedback("Spielstand gespeichert.");
-                  })
-                }
-              >
-                <Save size={17} />
-              </button>
-            )}
-            <button
-              className="icon-button"
-              aria-label={`${i === 0 ? "Autosave" : `Spielstand ${i}`} laden`}
-              onClick={() =>
-                void report(async () => {
-                  const saved = await loadSlot(slot);
-                  if (!saved) throw new Error("Dieser Slot ist noch leer.");
-                  store.setGame(saved.state);
-                  setSlotDates((d) => ({
-                    ...d,
-                    [slot]: new Date(saved.savedAt).toLocaleString("de-DE"),
-                  }));
-                  setFeedback("Spielstand geladen.");
-                })
-              }
-            >
-              <FolderOpen size={18} />
-            </button>
-          </div>
-        ))}
+        <div className="save-slots">
+          {SLOTS.map((slot, i) => {
+            const info = slots[slot];
+            return (
+              <div className="save-slot" key={slot}>
+                <div className="save-preview">
+                  {info?.meta?.preview ? (
+                    <img src={info.meta.preview} alt="" />
+                  ) : (
+                    <Save size={20} />
+                  )}
+                </div>
+                <div className="save-info">
+                  <strong>{i === 0 ? "Autosave" : `Spielstand ${i}`}</strong>
+                  {info?.meta ? (
+                    <small>
+                      {info.meta.name} · {dateLabel(info.meta.day)}
+                      <br />
+                      {money(info.meta.cash)} · {info.meta.games} Spiele
+                      {info.meta.scenario &&
+                        ` · ${scenarioById(info.meta.scenario).name}`}
+                      {info.meta.difficulty &&
+                        ` · ${DIFFICULTIES[info.meta.difficulty as Difficulty]?.name ?? ""}`}
+                      <br />
+                      gespeichert{" "}
+                      {new Date(info.savedAt).toLocaleString("de-DE")}
+                    </small>
+                  ) : (
+                    <small>
+                      {i === 0 ? "Wird automatisch gesichert" : "Leer"}
+                    </small>
+                  )}
+                </div>
+                <div className="save-actions">
+                  {i > 0 && (
+                    <button
+                      className="icon-button"
+                      aria-label={`Spielstand ${i} speichern`}
+                      title="Speichern"
+                      onClick={() =>
+                        void report(async () => {
+                          await saveSlot(slot, s, capturePreview());
+                          await refresh();
+                          setFeedback("Spielstand gespeichert.");
+                        })
+                      }
+                    >
+                      <Save size={17} />
+                    </button>
+                  )}
+                  <button
+                    className="icon-button"
+                    aria-label={`${i === 0 ? "Autosave" : `Spielstand ${i}`} laden`}
+                    title="Laden"
+                    disabled={!info}
+                    onClick={() =>
+                      void report(async () => {
+                        const saved = await loadSlot(slot);
+                        if (!saved)
+                          throw new Error("Dieser Slot ist noch leer.");
+                        store.setGame(saved.state);
+                        setFeedback("Spielstand geladen.");
+                      })
+                    }
+                  >
+                    <FolderOpen size={18} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
         <div className="button-row">
           <Button
             secondary

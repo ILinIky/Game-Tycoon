@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Briefcase } from "lucide-react";
 import {
+  Gamepad,
   Gamepad2,
+  Medal,
   Users,
   FlaskConical,
   Cpu,
@@ -23,6 +25,7 @@ import {
   BookOpen,
   Building,
   Building2,
+  CandlestickChart,
   FolderKanban,
   Save,
   Sparkles,
@@ -31,11 +34,14 @@ import {
   Trophy,
 } from "lucide-react";
 import { useGame } from "./store/gameStore";
-import { BALANCE, OFFICES } from "./game/config/balance";
+import { OFFICES } from "./game/config/balance";
 import { money, number, dateLabel } from "./game/utils";
-import type { ReleasedGame } from "./game/types";
+import type { Difficulty, ReleasedGame } from "./game/types";
 import type { SceneTarget } from "./scene/studioRenderer";
 import StaffAlert from "./components/game/StaffAlert";
+import TutorialCard from "./components/game/TutorialCard";
+import { DIFFICULTIES, SCENARIOS, scenarioById } from "./game/config/scenarios";
+import GameSelect from "./components/game/GameSelect";
 import Management from "./components/Management";
 import ProjectWizard from "./components/ProjectWizard";
 import StudioWorld from "./components/game/StudioWorld";
@@ -69,14 +75,17 @@ const sections = [
   { page: "Aufträge", title: "Aufträge", icon: Briefcase },
   { page: "Forschung", title: "Forschung", icon: FlaskConical },
   { page: "Technologie", title: "Engines", icon: Cpu },
+  { page: "Hardware", title: "Hardware", icon: Gamepad },
   { page: "Spiele", title: "Spielearchiv", icon: Gamepad2 },
   { page: "Marketing", title: "Marketing", icon: Megaphone },
   { page: "Studio", title: "Büroausbau", icon: Building2 },
   { page: "Markt", title: "Branche", icon: Globe2 },
   { page: "Weltrangliste", title: "Weltrangliste", icon: Trophy },
+  { page: "Börse", title: "Börse", icon: CandlestickChart },
   { page: "Finanzen", title: "Finanzen", icon: Wallet },
   { page: "Statistiken", title: "Statistiken", icon: ChartNoAxesCombined },
   { page: "Group", title: "Statistik Group", icon: Building },
+  { page: "Erfolge", title: "Erfolge", icon: Medal },
   { page: "Journal", title: "Journal", icon: BookOpen },
   { page: "Firma", title: "Spielmenü", icon: Settings2 },
 ];
@@ -95,6 +104,10 @@ function Founding({ onClose }: { onClose: () => void }) {
   const found = useGame((s) => s.found);
   const [name, setName] = useState("Evergreen Studio");
   const [founder, setFounder] = useState("Alex Weber");
+  const [scenarioId, setScenarioId] = useState("classic");
+  const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  const [tutorial, setTutorial] = useState(true);
+  const scenario = scenarioById(scenarioId);
   return (
     <Modal
       title="Ein neues Studio"
@@ -104,7 +117,7 @@ function Founding({ onClose }: { onClose: () => void }) {
     >
       <div className="founding">
         <div className="founding-visual">
-          <span className="founding-big-year">1990</span>
+          <span className="founding-big-year">{scenario.year}</span>
           <span className="eyebrow">KAPITEL 01</span>
           <h1>
             Alles beginnt
@@ -122,7 +135,11 @@ function Founding({ onClose }: { onClose: () => void }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            found(name, founder);
+            found(name, founder, {
+              scenario: scenarioId,
+              difficulty,
+              tutorial,
+            });
           }}
         >
           <span className="eyebrow">DEIN SPIELESTUDIO</span>
@@ -150,13 +167,63 @@ function Founding({ onClose }: { onClose: () => void }) {
               onChange={(e) => setFounder(e.target.value)}
             />
           </label>
+          <div className="form-row founding-options">
+            <label>
+              Szenario
+              <GameSelect
+                label="Szenario"
+                value={scenarioId}
+                onChange={setScenarioId}
+                options={SCENARIOS.map((x) => ({
+                  value: x.id,
+                  label: x.name,
+                  description: x.description,
+                }))}
+              />
+            </label>
+            <label>
+              Schwierigkeit
+              <GameSelect
+                label="Schwierigkeit"
+                value={difficulty}
+                onChange={(v) => setDifficulty(v as Difficulty)}
+                options={(Object.keys(DIFFICULTIES) as Difficulty[]).map(
+                  (key) => ({
+                    value: key,
+                    label: DIFFICULTIES[key].name,
+                    description: DIFFICULTIES[key].description,
+                  }),
+                )}
+              />
+            </label>
+          </div>
           <div className="founding-budget">
             <Wallet size={21} />
             <span>
-              Startkapital<strong>{money(BALANCE.initialCash)}</strong>
+              Startkapital<strong>{money(scenario.cash)}</strong>
+              <small>
+                {scenario.staff
+                  ? `${scenario.staff} Mitarbeiter · ${OFFICES[scenario.office].name}`
+                  : "Nur du und deine Idee"}
+              </small>
             </span>
             <Check size={18} />
           </div>
+          <button
+            type="button"
+            className="founding-tutorial"
+            role="switch"
+            aria-checked={tutorial}
+            onClick={() => setTutorial(!tutorial)}
+          >
+            <span>
+              <strong>Kurzes Tutorial</strong>
+              <small>Fünf Schritte zum ersten Release.</small>
+            </span>
+            <i className={tutorial ? "on" : ""}>
+              <b />
+            </i>
+          </button>
           <button
             type="submit"
             className="game-action"
@@ -660,6 +727,9 @@ export default function App() {
                   {saved ? "Gespeichert" : "Wird gespeichert …"}
                 </button>
               </footer>
+              {!s.company.bankrupt && !employee && !project && (
+                <TutorialCard animated={animated} />
+              )}
               {!s.company.bankrupt && (
                 <StaffAlert
                   animated={animated}

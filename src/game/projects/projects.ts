@@ -6,6 +6,9 @@ import type { GameState, ProjectInput, GameProject } from "../types";
 import { BALANCE, OFFICES, SIZES, PLATFORMS } from "../config/balance";
 import { PRICE_STEPS } from "./pricing";
 import { pruneArchive } from "./archive";
+import { difficultyOf } from "../config/scenarios";
+import { stockOnRelease } from "../market/stock";
+import { rivalsCopy } from "../market/rivals";
 import { clamp, random, uid } from "../utils";
 import { notify } from "../events/events";
 import { ambitionFor, DEFAULT_WEIGHTS, DESIGN_FOCUS } from "../config/design";
@@ -34,6 +37,7 @@ export function projectCost(s: GameState, input: ProjectInput) {
   return (
     nice(
       scaled(s, SIZES[input.size].cost) *
+        difficultyOf(s).costs *
         ambitionFor(input).cost *
         featureEffects(input).cost *
         (1 - techEffects(s).cost),
@@ -242,6 +246,9 @@ export function release(s: GameState, id: string) {
   });
   s.projects = s.projects.filter((project) => project.id !== id);
   pruneArchive(s);
+  stockOnRelease(s, { score, size: p.size });
+  // A big hit attracts copycats.
+  if (score >= 8.5) rivalsCopy(s, p.genre, p.name);
   s.company.reputation = clamp(
     s.company.reputation + (score - 5) * 1.2 * SIZES[p.size].fame,
   );

@@ -10,6 +10,7 @@ import { useGame } from "../../store/gameStore";
 import {
   groupStats,
   holdingsOf,
+  currentValue,
   incomeBonus,
   monthlyProfit,
   SALE_SHARE,
@@ -34,6 +35,8 @@ interface Member {
   earned: number | null;
   since: number;
   holding: boolean;
+  /** Price change since purchase in percent. */
+  change: number | null;
 }
 
 /** Profit overview of the player's group with all owned companies. */
@@ -44,16 +47,21 @@ export default function GroupPortfolio({ sell = false }: { sell?: boolean }) {
   const stats = groupStats(s);
   const bonus = incomeBonus(s);
   const members: Member[] = [
-    ...holdingsOf(s).map((h) => ({
-      key: h.id,
-      name: h.name,
-      kind: `${h.id} · ${h.sector}`,
-      value: h.value,
-      monthly: Math.round(monthlyProfit(h) * bonus),
-      earned: h.earned,
-      since: h.since,
-      holding: true,
-    })),
+    ...holdingsOf(s).map((h) => {
+      const value = currentValue(h, s.day);
+      const paid = h.paid ?? h.value;
+      return {
+        key: h.id,
+        name: h.name,
+        kind: `${h.id} · ${h.sector}`,
+        value,
+        monthly: Math.round(monthlyProfit({ ...h, value }) * bonus),
+        earned: h.earned,
+        since: h.since,
+        holding: true,
+        change: ((value - paid) / paid) * 100,
+      };
+    }),
     ...s.subsidiaries.map((x) => ({
       key: `subsidiary-${x.name}`,
       name: x.name,
@@ -63,6 +71,7 @@ export default function GroupPortfolio({ sell = false }: { sell?: boolean }) {
       earned: null,
       since: x.since,
       holding: false,
+      change: null,
     })),
   ].sort((a, b) => b.monthly - a.monthly);
   const top = Math.max(1, ...members.map((m) => m.monthly));
@@ -134,7 +143,19 @@ export default function GroupPortfolio({ sell = false }: { sell?: boolean }) {
             </div>
             <div className="group-member-profit">
               <b>+{money(m.monthly)}</b>
-              <small>/ Monat · Wert {compactEuro(m.value)}</small>
+              <small>
+                / Monat · Wert {compactEuro(m.value)}
+                {m.change !== null && (
+                  <em className={m.change >= 0 ? "up" : "down"}>
+                    {" "}
+                    {m.change >= 0 ? "+" : ""}
+                    {m.change.toLocaleString("de-DE", {
+                      maximumFractionDigits: 1,
+                    })}{" "}
+                    %
+                  </em>
+                )}
+              </small>
             </div>
             {sell && m.holding && (
               <Button
@@ -149,8 +170,9 @@ export default function GroupPortfolio({ sell = false }: { sell?: boolean }) {
         ))}
       </ul>
       <p className="hint">
-        Gewinne werden monatlich ausgezahlt und schwanken um ±15 %. Ein Verkauf
-        bringt {Math.round(SALE_SHARE * 100)} % des Marktwerts zurück.
+        Börsenkurse schwanken mit dem Markt: Kaufe günstig, verkaufe teuer. Der
+        Gewinn folgt dem aktuellen Wert und schwankt monatlich um ±15 %. Ein
+        Verkauf bringt {Math.round(SALE_SHARE * 100)} % des aktuellen Werts.
       </p>
     </div>
   );

@@ -33,7 +33,11 @@ import {
   type RankedCompany,
   type RankingCurrency,
   type RankingGroup,
+  type RankingMarket,
+  marketMergers,
 } from "../../game/leaderboard";
+import { worldSeed } from "../../game/market/marketCycle";
+import { dateLabel as snapshotDay } from "../../game/utils";
 import { groupStats, holdingsOf } from "../../game/market/holdings";
 
 const PAGE_SIZE = 30;
@@ -108,7 +112,31 @@ export default function Leaderboard() {
         : null,
     [stats, game],
   );
-  const ranking = useMemo(() => buildRanking(company, group), [company, group]);
+  const owned = holdingsOf(game)
+    .map((h) => h.id)
+    .join(",");
+  const market = useMemo<RankingMarket>(
+    () => ({
+      day: game.day,
+      seed: worldSeed(game),
+      owned: owned ? owned.split(",") : [],
+    }),
+    [game.day, company.founder, owned],
+  );
+  const ranking = useMemo(
+    () => buildRanking(company, group, market),
+    [company, group, market],
+  );
+  const mergers = useMemo(() => {
+    const names = new Map(realCompanies.map((c) => [c.id, c.name]));
+    return marketMergers(market)
+      .slice(0, 6)
+      .map((m) => ({
+        ...m,
+        acquirer: names.get(m.acquirer) ?? m.acquirer,
+        target: names.get(m.target) ?? m.target,
+      }));
+  }, [market]);
   const groupEntry = ranking.find((entry) => entry.group);
   const ownIndex = ranking.findIndex((entry) => entry.player);
   const own = ranking[ownIndex];
@@ -150,7 +178,7 @@ export default function Leaderboard() {
   const startNearby = Math.max(0, ownIndex - 3);
   const displayed =
     mode === "world"
-      ? worldNeighborhood(company, group)
+      ? worldNeighborhood(company, group, market)
       : mode === "group"
         ? ranking.filter(
             (entry) => entry.group || entry.player || entry.memberOf,
@@ -404,6 +432,25 @@ export default function Leaderboard() {
           </button>
         </section>
       )}
+      {mergers.length > 0 && (
+        <section
+          className="ranking-mergers"
+          aria-label="Fusionen in der Spielwelt"
+        >
+          <span className="ranking-kicker">
+            FUSIONEN & ÜBERNAHMEN IN DER SPIELWELT
+          </span>
+          <ul>
+            {mergers.map((m) => (
+              <li key={`${m.acquirer}-${m.target}`}>
+                <small>{snapshotDay(m.day)}</small>
+                <strong>{m.acquirer}</strong> übernimmt{" "}
+                <strong>{m.target}</strong>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <p className="ranking-scope">
         Weltrang = gerundetes Spielweltmodell. Firmenvergleich = Platz unter{" "}
         {realCompanies.length} echten Börsenunternehmen. Dein Firmenwert ist
@@ -590,6 +637,15 @@ export default function Leaderboard() {
                           )}
                           {entry.group && (
                             <span className="ranking-you">GROUP</span>
+                          )}
+                          {entry.absorbed && (
+                            <span
+                              className="ranking-absorbed"
+                              title={`Hat übernommen: ${entry.absorbed.join(", ")}`}
+                            >
+                              +{entry.absorbed.length} Übernahme
+                              {entry.absorbed.length === 1 ? "" : "n"}
+                            </span>
                           )}
                           {entry.memberOf && (
                             <span

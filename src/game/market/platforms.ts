@@ -1,4 +1,4 @@
-import type { GameState, Platform, ReleasedGame } from "../types";
+import type { GameState, OwnConsole, Platform, ReleasedGame } from "../types";
 import { PLATFORMS } from "../config/platforms";
 
 export type PlatformStatus =
@@ -50,15 +50,43 @@ export const STATUS_LABEL: Record<PlatformStatus, string> = {
   retired: "Eingestellt",
 };
 
+export const ownConsoles = (s: Pick<GameState, "consoles">) => s.consoles ?? [];
+export const ownPlatformId = (c: Pick<OwnConsole, "id">) => `own-${c.id}`;
+export const isOwnPlatform = (id: string) => id.startsWith("own-");
+
+/** The studio's console as a platform; its weight grows with sales. */
+export function consolePlatform(c: OwnConsole): Platform {
+  return {
+    id: ownPlatformId(c),
+    name: c.name,
+    share: Math.min(55, 10 + c.installed / 1_000_000),
+    license: 0,
+    year: yearOf(c.launched),
+    end: yearOf(c.end) - 1,
+    power: c.power,
+    audience: "Everyone",
+    kind: "console",
+    generation: c.generation,
+  };
+}
+
+/** All platforms of the market including the studio's own consoles. */
+export function allPlatforms(s: Pick<GameState, "consoles">) {
+  const own = ownConsoles(s);
+  return own.length ? [...PLATFORMS, ...own.map(consolePlatform)] : PLATFORMS;
+}
+
+type PlatformState = Pick<GameState, "day"> & Partial<Pick<GameState, "consoles">>;
+
 /** Platforms a new project can target today. */
-export function availablePlatforms(s: Pick<GameState, "day">) {
-  return PLATFORMS.filter((p) => {
+export function availablePlatforms(s: PlatformState) {
+  return allPlatforms(s).filter((p) => {
     const status = platformStatus(p, s.day);
     return status !== "future" && status !== "announced" && status !== "retired";
   });
 }
 
-export const isAvailable = (s: Pick<GameState, "day">, id: string) =>
+export const isAvailable = (s: PlatformState, id: string) =>
   availablePlatforms(s).some((p) => p.id === id);
 
 /** Launch titles (released in a platform's first year) stay more visible. */
@@ -68,10 +96,15 @@ export function isLaunchTitle(p: Platform, releasedDay: number) {
 }
 
 /** Reach multiplier of a released game across its platforms (1 ≈ PC 1990). */
-export function gameReach(g: Pick<ReleasedGame, "platforms" | "releasedDay">, day: number) {
+export function gameReach(
+  g: Pick<ReleasedGame, "platforms" | "releasedDay">,
+  day: number,
+  s: Partial<Pick<GameState, "consoles">> = {},
+) {
+  const platforms = allPlatforms(s);
   return (
     g.platforms.reduce((n, id) => {
-      const p = PLATFORMS.find((x) => x.id === id);
+      const p = platforms.find((x) => x.id === id);
       if (!p) return n;
       return n + platformShare(p, day) * (isLaunchTitle(p, g.releasedDay) ? 1 + LAUNCH_BONUS : 1);
     }, 0) / 50

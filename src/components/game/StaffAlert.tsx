@@ -9,9 +9,10 @@ import {
   unrestReasons,
 } from "../../game/employees/perks";
 import { money } from "../../game/utils";
+import { takeoverDefenseCost } from "../../game/market/rivals";
 import { Button } from "../ui";
 
-const ORDER = { poach: 0, salary: 1, raise: 2 } as const;
+const ORDER = { takeover: 0, poach: 1, salary: 2, raise: 3 } as const;
 
 /** Open staff decisions shown directly in the studio, so nobody leaves unnoticed. */
 export default function StaffAlert({
@@ -24,7 +25,7 @@ export default function StaffAlert({
   const { game: s, decision } = useGame();
   const open = s.events
     .filter((ev) =>
-      ev.decision === "raise"
+      ev.decision === "raise" || ev.decision === "takeover"
         ? true
         : (ev.decision === "poach" || ev.decision === "salary") &&
           s.employees.some((e) => e.id === ev.target),
@@ -37,7 +38,16 @@ export default function StaffAlert({
   const event = open[0];
   const employee = s.employees.find((e) => e.id === event?.target);
   let content = null;
-  if (event?.decision === "poach" && employee) {
+  if (event?.decision === "takeover") {
+    content = {
+      tone: "danger",
+      title: `Feindliche Übernahme durch ${event.target ?? "einen Konkurrenten"}`,
+      body: "Ein Konkurrent will 15 % deiner Aktien übernehmen und künftig eine Sonderdividende kassieren. Ein Abwehr-Rückkauf sichert die Anteile.",
+      accept: "Abwehren",
+      detail: money(takeoverDefenseCost(s)),
+      decline: "Gewähren lassen",
+    };
+  } else if (event?.decision === "poach" && employee) {
     const reasons = unrestReasons(employee, s);
     const days = poachDaysLeft(s, event.day);
     content = {

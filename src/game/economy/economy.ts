@@ -8,14 +8,17 @@ import { lab, techEffects } from "../research/research";
 import { marketScale, scaled } from "./scale";
 import { facilityEffects, facilityUpkeep, officeRent } from "../office/office";
 import { featureEffects } from "../config/features";
+import { exclusiveFactor } from "../hardware/consoles";
+import { difficultyOf } from "../config/scenarios";
 export function monthlyCosts(s: GameState) {
   return (
-    officeRent(s) +
-    s.employees.reduce((n, e) => n + e.salary, 0) +
-    s.employees.length * scaled(s, BALANCE.softwarePerEmployee) +
-    scaled(s, lab(s).upkeep) +
-    facilityUpkeep(s) +
-    s.company.debt * BALANCE.loanInterest
+    difficultyOf(s).costs *
+    (officeRent(s) +
+      s.employees.reduce((n, e) => n + e.salary, 0) +
+      s.employees.length * scaled(s, BALANCE.softwarePerEmployee) +
+      scaled(s, lab(s).upkeep) +
+      facilityUpkeep(s) +
+      s.company.debt * BALANCE.loanInterest)
   );
 }
 export function sales(s: GameState) {
@@ -28,7 +31,7 @@ export function sales(s: GameState) {
   for (const g of s.games) {
     const age = s.day - g.releasedDay;
     if (age < 1 || age > salesLifetime(g)) continue;
-    const reach = gameReach(g, s.day);
+    const reach = gameReach(g, s.day, s) * exclusiveFactor(g);
     const decay =
       Math.exp(-age / ((g.score > 7.5 ? 95 : 48) * (1 + tech.longTail))) +
       0.025 +
@@ -62,6 +65,7 @@ export function sales(s: GameState) {
           salesFade(g, s.day) *
           (g.patched ? 1.1 : 1) *
           (1 + tech.sales + facility.sales) *
+          difficultyOf(s).sales *
           featureEffects(g).sales,
       ),
     );

@@ -25,12 +25,18 @@ export default function JournalView() {
                 <Button onClick={() => store.decision(e.id, true)}>
                   {e.decision === "poach"
                     ? "Gegenangebot machen"
-                    : e.decision === "salary"
-                      ? "Gehalt erhöhen"
-                      : "Gehälter erhöhen"}
+                    : e.decision === "takeover"
+                      ? "Übernahme abwehren"
+                      : e.decision === "salary"
+                        ? "Gehalt erhöhen"
+                        : "Gehälter erhöhen"}
                 </Button>
                 <Button secondary onClick={() => store.decision(e.id, false)}>
-                  {e.decision === "poach" ? "Ziehen lassen" : "Ablehnen"}
+                  {e.decision === "poach"
+                    ? "Ziehen lassen"
+                    : e.decision === "takeover"
+                      ? "Gewähren lassen"
+                      : "Ablehnen"}
                 </Button>
               </div>
             )}

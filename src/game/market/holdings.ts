@@ -4,12 +4,16 @@ import { notify } from "../events/events";
 import { clamp, random } from "../utils";
 import { scaled } from "../economy/scale";
 import { techEffects } from "../research/research";
+import { companyFactor } from "./marketCycle";
 
 /** A company that can be bought, with its market value in euros. */
 export interface CompanyOffer {
   id: string;
   name: string;
   sector: string;
+  /** Snapshot value without market swings. */
+  base: number;
+  /** Price at today's market. */
   price: number;
 }
 
@@ -28,8 +32,12 @@ const EARNINGS_YIELD: Record<string, number> = {
   "Weitere Branchen": 0.07,
 };
 
-/** Sale proceeds as share of the market value (fees and discount). */
-export const SALE_SHARE = 0.9;
+/** Sale proceeds as share of the current market value (fees). */
+export const SALE_SHARE = 0.97;
+
+/** Current market value of a holding. */
+export const currentValue = (h: Pick<Holding, "id" | "value">, day: number) =>
+  Math.round(h.value * companyFactor(h.id, day));
 
 /** Stable per-company variation of ±20 %, so equal sectors differ a little. */
 function variation(id: string) {
@@ -73,7 +81,8 @@ export function buyCompany(s: GameState, c: CompanyOffer) {
     id: c.id,
     name: c.name,
     sector: c.sector,
-    value: c.price,
+    value: c.base,
+    paid: c.price,
     since: s.day,
     earned: 0,
   };
@@ -82,16 +91,16 @@ export function buyCompany(s: GameState, c: CompanyOffer) {
   notify(
     s,
     "Übernahme abgeschlossen",
-    `${c.name} gehört jetzt zur ${groupName(s.company.name)} und bringt etwa ${monthlyProfit(holding).toLocaleString("de-DE")} € Gewinn pro Monat.`,
+    `${c.name} gehört jetzt zur ${groupName(s.company.name)} und bringt etwa ${monthlyProfit({ ...holding, value: c.price }).toLocaleString("de-DE")} € Gewinn pro Monat.`,
     "success",
   );
 }
 
-/** Sells a company back to the market for 90 % of its value. */
+/** Sells a company at today's market value minus fees. */
 export function sellCompany(s: GameState, id: string) {
   const h = holdingsOf(s).find((x) => x.id === id);
   if (!h) throw new Error("Diese Beteiligung gehört nicht zu deiner Group.");
-  const proceeds = Math.round(h.value * SALE_SHARE);
+  const proceeds = Math.round(currentValue(h, s.day) * SALE_SHARE);
   s.company.cash += proceeds;
   s.holdings = holdingsOf(s).filter((x) => x.id !== id);
   notify(
@@ -109,7 +118,9 @@ export function payHoldings(s: GameState) {
   let total = 0;
   for (const h of holdingsOf(s)) {
     const income = Math.round(
-      monthlyProfit(h) * incomeBonus(s) * (0.85 + random(s) * 0.3),
+      monthlyProfit({ ...h, value: currentValue(h, s.day) }) *
+        incomeBonus(s) *
+        (0.85 + random(s) * 0.3),
     );
     h.earned += income;
     h.lastIncome = income;
@@ -131,25 +142,37 @@ export const subsidiaryValue = (s: Pick<GameState, "day">, income: number) =>
 export function groupStats(s: GameState) {
   const holdings = holdingsOf(s);
   const studio = studioValuation(s.company);
-  const holdingsValue = holdings.reduce((n, h) => n + h.value, 0);
+  const holdingsValue = holdings.reduce(
+    (n, h) => n + currentValue(h, s.day),
+    0,
+  );
   const subsidiariesValue = s.subsidiaries.reduce(
     (n, x) => n + subsidiaryValue(s, x.income),
     0,
   );
   const bonus = incomeBonus(s);
   const holdingsIncome = Math.round(
-    holdings.reduce((n, h) => n + monthlyProfit(h), 0) * bonus,
+    holdings.reduce(
+      (n, h) => n + monthlyProfit({ ...h, value: currentValue(h, s.day) }),
+      0,
+    ) * bonus,
   );
   const subsidiariesIncome = Math.round(
     s.subsidiaries.reduce((n, x) => n + scaled(s, x.income), 0) * bonus,
   );
+  const value = studio + holdingsValue + subsidiariesValue;
+  // A listed group is valued at its market capitalisation.
+  const marketCap = s.stock ? Math.round(s.stock.price * s.stock.shares) : null;
   return {
     name: groupName(s.company.name),
-    active: holdings.length + s.subsidiaries.length > 0,
+    active: holdings.length + s.subsidiaries.length > 0 || !!s.stock,
     studio,
     holdingsValue,
     subsidiariesValue,
-    value: studio + holdingsValue + subsidiariesValue,
+    /** Fundamental value of everything the group owns. */
+    fundamental: value,
+    marketCap,
+    value: marketCap ?? value,
     holdingsIncome,
     subsidiariesIncome,
     monthlyIncome: holdingsIncome + subsidiariesIncome,

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Building2 } from "lucide-react";
 import { useGame } from "../../store/gameStore";
 import { groupStats, holdingsOf } from "../../game/market/holdings";
+import { worldSeed } from "../../game/market/marketCycle";
 import {
   buildRanking,
   estimatedWorldRank,
@@ -20,11 +21,19 @@ export default function GroupStatsView() {
   const ranking = useMemo(
     () =>
       stats.active
-        ? buildRanking(s.company, {
-            name: stats.name,
-            value: stats.value,
-            members: holdingsOf(s).map((h) => h.id),
-          })
+        ? buildRanking(
+            s.company,
+            {
+              name: stats.name,
+              value: stats.value,
+              members: holdingsOf(s).map((h) => h.id),
+            },
+            {
+              day: s.day,
+              seed: worldSeed(s),
+              owned: holdingsOf(s).map((h) => h.id),
+            },
+          )
         : [],
     [s, stats],
   );
@@ -49,7 +58,10 @@ export default function GroupStatsView() {
     { key: "holdings", label: "Beteiligungen", value: stats.holdingsValue },
   ].filter((p) => p.value > 0);
   const figures = [
-    ["Marktwert der Group", compactEuro(stats.value)],
+    [
+      stats.marketCap !== null ? "Börsenwert der Group" : "Marktwert der Group",
+      compactEuro(stats.value),
+    ],
     ["Weltrang", formatWorldRank(estimatedWorldRank(entry.valueUsd))],
     ["Firmenvergleich", `#${entry.rank} von ${ranking.length}`],
     ["Unternehmen", String(stats.companies + 1)],

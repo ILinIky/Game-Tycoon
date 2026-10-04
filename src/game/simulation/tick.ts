@@ -23,9 +23,16 @@ import {
   teamRaiseCost,
   unlockPerks,
 } from "../employees/perks";
-import { paySubsidiaries, rivalsTick } from "../market/rivals";
+import {
+  paySubsidiaries,
+  payRivalDividend,
+  rivalsTick,
+} from "../market/rivals";
 import { payHoldings } from "../market/holdings";
 import { autoMarketing } from "../marketing/campaigns";
+import { stockTick } from "../market/stock";
+import { checkAchievements } from "../progress/achievements";
+import { consoleTick, payConsoles } from "../hardware/consoles";
 import { expoTick } from "../marketing/expo";
 import { yearTick } from "../progress/yearly";
 import { cloneState } from "../state";
@@ -151,10 +158,14 @@ export function tick(source: GameState): GameState {
     payLicenses(s);
     paySubsidiaries(s);
     payHoldings(s);
+    payRivalDividend(s);
+    payConsoles(s);
     unlockPerks(s);
     loyaltyTick(s);
   }
   expirePoaching(s);
+  stockTick(s);
+  consoleTick(s);
   rivalsTick(s);
   updateMarket(s);
   expoTick(s);
@@ -190,6 +201,7 @@ export function tick(source: GameState): GameState {
     );
   }
   processProductionQueue(s);
+  if (s.day % 7 === 0) checkAchievements(s);
   // Keep the ledger so lifetime revenue and profit survive beyond ten years.
   return s;
 }

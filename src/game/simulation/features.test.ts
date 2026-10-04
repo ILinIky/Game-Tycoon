@@ -35,16 +35,17 @@ import {
 import { recruit } from "../employees/recruiting";
 import {
   buyCompany,
+  currentValue,
   groupStats,
   payHoldings,
   sellCompany,
 } from "../market/holdings";
 import {
+  cheapestCompanies,
   companyOffer,
-  companyPrice,
   searchCompanies,
 } from "../market/companyMarket";
-import { buildRanking, realCompanies } from "../leaderboard";
+import { buildRanking, marketMergers, worldCompanies } from "../leaderboard";
 import {
   acquireStudio,
   acquisitionPrice,
@@ -261,48 +262,74 @@ describe("Mitarbeiter", () => {
 });
 
 describe("Unternehmensübernahmen & Group", () => {
-  const cheapest = [...realCompanies].sort((a, b) => a.valueUsd - b.valueUsd)[0];
+  const cheapest = (s: GameState) => cheapestCompanies(s, 1)[0];
   it("findet echte Unternehmen über die Suche", () => {
-    expect(searchCompanies("nvidia")[0].name).toBe("NVIDIA");
-    expect(searchCompanies("")).toEqual([]);
+    const s = founded();
+    expect(searchCompanies(s, "nvidia")[0].name).toBe("NVIDIA");
+    expect(searchCompanies(s, "")).toEqual([]);
   });
   it("kauft zum Marktwert, zahlt Gewinne aus und verkauft wieder", () => {
     const s = founded();
-    const price = companyPrice(cheapest);
-    expect(() => buyCompany(s, companyOffer(cheapest))).toThrow();
-    s.company.cash = price + 1000;
-    buyCompany(s, companyOffer(cheapest));
+    const offer = companyOffer(cheapest(s));
+    expect(() => buyCompany(s, offer)).toThrow();
+    s.company.cash = offer.price + 1000;
+    buyCompany(s, offer);
     expect(s.company.cash).toBe(1000);
-    expect(() => buyCompany(s, companyOffer(cheapest))).toThrow();
+    expect(() => buyCompany(s, offer)).toThrow();
     const paid = payHoldings(s);
     expect(paid).toBeGreaterThan(0);
     expect(s.holdings![0].earned).toBe(paid);
     const stats = groupStats(s);
     expect(stats.active).toBe(true);
     expect(stats.name).toBe(`${s.company.name} Group`);
-    expect(stats.value).toBeGreaterThan(price);
-    sellCompany(s, cheapest.id);
+    expect(stats.value).toBeGreaterThan(offer.price);
+    sellCompany(s, offer.id);
     expect(s.holdings).toHaveLength(0);
-    expect(s.company.cash).toBeGreaterThan(price * 0.85);
+    expect(s.company.cash).toBeGreaterThan(offer.price * 0.9);
+  });
+  it("lässt Kurse gekaufter Firmen schwanken", () => {
+    const s = founded();
+    const offer = companyOffer(cheapest(s));
+    s.company.cash = offer.price;
+    buyCompany(s, offer);
+    const values = [0, 200, 400, 800, 1600].map((d) =>
+      currentValue(s.holdings![0], d),
+    );
+    expect(new Set(values).size).toBeGreaterThan(3);
   });
   it("zeigt Group und Mitgliedsfirmen in der Weltrangliste", () => {
     const s = founded();
-    s.company.cash = companyPrice(cheapest);
-    buyCompany(s, companyOffer(cheapest));
+    const offer = companyOffer(cheapest(s));
+    s.company.cash = offer.price;
+    buyCompany(s, offer);
     const stats = groupStats(s);
     const ranking = buildRanking(s.company, {
       name: stats.name,
       value: stats.value,
-      members: [cheapest.id],
+      members: [offer.id],
     });
     expect(ranking.find((e) => e.group)?.name).toBe(stats.name);
-    expect(ranking.find((e) => e.id === cheapest.id)?.memberOf).toBe(stats.name);
+    expect(ranking.find((e) => e.id === offer.id)?.memberOf).toBe(stats.name);
     expect(buildRanking(s.company).some((e) => e.group)).toBe(false);
+  });
+  it("lässt echte Firmen in der Spielwelt fusionieren, aber nie eigene", () => {
+    const market = { day: 365 * 20, seed: 42, owned: [] as string[] };
+    const mergers = marketMergers(market);
+    expect(mergers.length).toBeGreaterThan(20);
+    expect(marketMergers(market)).toEqual(mergers);
+    const target = mergers[0].target;
+    const world = worldCompanies(market);
+    expect(world.some((c) => c.id === target)).toBe(false);
+    expect(world.find((c) => c.id === mergers[0].acquirer)?.absorbed?.length).toBeGreaterThan(0);
+    expect(
+      marketMergers({ ...market, owned: [target] }).some((m) => m.target === target),
+    ).toBe(false);
   });
   it("lädt Beteiligungen aus Spielständen", () => {
     const s = founded();
-    s.company.cash = companyPrice(cheapest);
-    buyCompany(s, companyOffer(cheapest));
+    const offer = companyOffer(cheapest(s));
+    s.company.cash = offer.price;
+    buyCompany(s, offer);
     const loaded = validateSave(JSON.parse(JSON.stringify(s)));
     expect(loaded.holdings).toHaveLength(1);
     const old = JSON.parse(JSON.stringify(s)) as Record<string, unknown>;

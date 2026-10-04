@@ -15,6 +15,7 @@ import { LABS, RESEARCH_FOCUS } from "../config/technologies";
 import { ENGINE_PROFILES } from "../config/engines";
 import { FACILITIES } from "../config/offices";
 import { featureDefaults } from "../initial";
+import { isOwnPlatform } from "../market/platforms";
 import { MAX_PRODUCTION_QUEUE, validQueuedInput } from "../projects/queue";
 type Obj = Record<string, unknown>;
 const object = (v: unknown): v is Obj =>
@@ -177,7 +178,9 @@ export function validateSave(v: unknown): GameState {
     !strings(v.technologies) ||
     !v.technologies.every((id) => TECHNOLOGIES.some((t) => t.id === id)) ||
     !strings(v.licenses) ||
-    !v.licenses.every((id) => PLATFORMS.some((p) => p.id === id)) ||
+    !v.licenses.every(
+      (id) => isOwnPlatform(id) || PLATFORMS.some((p) => p.id === id),
+    ) ||
     !list(
       v.candidates,
       (e) =>
@@ -296,8 +299,10 @@ export function validateSave(v: unknown): GameState {
           new Set(settings.team).size === settings.team.length &&
           strings(settings.platforms) &&
           settings.platforms.length > 0 &&
-          settings.platforms.every((id) =>
-            PLATFORMS.some((platform) => platform.id === id),
+          settings.platforms.every(
+            (id) =>
+              isOwnPlatform(id) ||
+              PLATFORMS.some((platform) => platform.id === id),
           ) &&
           (settings.designFocus === undefined ||
             ["systems", "technology", "atmosphere"].includes(
@@ -361,7 +366,9 @@ export function validateSave(v: unknown): GameState {
     result.projects.some(
       (p) =>
         p.team.some((id) => !ids.has(id)) ||
-        p.platforms.some((id) => !PLATFORMS.some((p) => p.id === id)),
+        p.platforms.some(
+          (id) => !isOwnPlatform(id) && !PLATFORMS.some((p) => p.id === id),
+        ),
     )
   )
     throw new Error("Ungültige Referenzen im Spielstand.");
@@ -423,9 +430,33 @@ export function unpackState(state: unknown) {
   };
 }
 
-export async function saveSlot(slot: string, state: GameState) {
+/** Summary shown in the save list without loading the whole state. */
+export interface SlotMeta {
+  name: string;
+  day: number;
+  cash: number;
+  games: number;
+  scenario?: string;
+  difficulty?: string;
+  preview?: string;
+}
+
+export async function saveSlot(
+  slot: string,
+  state: GameState,
+  preview?: string,
+) {
   const savedAt = new Date().toISOString();
-  const payload = { savedAt, state: packState(state), packed: true };
+  const meta: SlotMeta = {
+    name: state.company.name,
+    day: state.day,
+    cash: Math.round(state.company.cash),
+    games: state.games.length,
+    scenario: state.scenario,
+    difficulty: state.difficulty,
+    preview,
+  };
+  const payload = { savedAt, meta, state: packState(state), packed: true };
   try {
     const db = await database();
     await new Promise<void>((resolve, reject) => {
@@ -438,10 +469,50 @@ export async function saveSlot(slot: string, state: GameState) {
   } catch {
     localStorage.setItem(
       `studio-zero-${slot}`,
-      JSON.stringify({ savedAt, state }),
+      JSON.stringify({ savedAt, meta: { ...meta, preview: undefined }, state }),
     );
   }
 }
+/** Reads only date and summary of a slot. */
+export async function slotMeta(
+  slot: string,
+): Promise<{ savedAt: string; meta?: SlotMeta } | null> {
+  let payload: unknown;
+  try {
+    const db = await database();
+    payload = await new Promise((resolve, reject) => {
+      const r = db.transaction("saves").objectStore("saves").get(slot);
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    });
+    db.close();
+  } catch {
+    /* fall back to local storage */
+  }
+  if (!payload) {
+    const raw = localStorage.getItem(`studio-zero-${slot}`);
+    if (raw) payload = JSON.parse(raw) as unknown;
+  }
+  if (!object(payload) || typeof payload.savedAt !== "string") return null;
+  const meta = object(payload.meta)
+    ? (payload.meta as unknown as SlotMeta)
+    : undefined;
+  if (meta) return { savedAt: payload.savedAt, meta };
+  const state = object(payload.state) ? payload.state : null;
+  const company = state && object(state.company) ? state.company : null;
+  return {
+    savedAt: payload.savedAt,
+    meta: company
+      ? {
+          name: String(company.name ?? ""),
+          day: numeric(state!.day) ? state!.day : 0,
+          cash: numeric(company.cash) ? company.cash : 0,
+          games: Array.isArray(state!.games) ? state!.games.length : 0,
+        }
+      : undefined,
+  };
+}
+
 export async function loadSlot(
   slot: string,
 ): Promise<{ state: GameState; savedAt: string } | null> {
@@ -541,6 +612,69 @@ function normalizeFeatures(s: GameState) {
           : null,
       }
     : undefined;
+  const stock = s.stock as unknown;
+  s.stock =
+    fields(stock, [
+      "shares",
+      "owned",
+      "rivalStake",
+      "price",
+      "ipoDay",
+      "ipoPrice",
+      "sentiment",
+      "quarterStart",
+      "target",
+    ]) &&
+    (stock.shares as number) > 0 &&
+    (stock.owned as number) > 0 &&
+    Array.isArray(stock.history)
+      ? (stock as unknown as GameState["stock"])
+      : null;
+  s.consoles = Array.isArray(s.consoles)
+    ? s.consoles.filter((c) =>
+        fields(
+          c,
+          [
+            "generation",
+            "launched",
+            "end",
+            "power",
+            "installed",
+            "licenseRevenue",
+          ],
+          ["id", "name"],
+        ),
+      )
+    : [];
+  const consoleProject = s.consoleProject as unknown;
+  s.consoleProject =
+    fields(
+      consoleProject,
+      ["generation", "work", "done", "budget", "started"],
+      ["name"],
+    ) &&
+    strings(consoleProject.team) &&
+    (consoleProject.team as string[]).every((id) => ids.has(id))
+      ? (consoleProject as unknown as GameState["consoleProject"])
+      : null;
+  s.achievements =
+    object(s.achievements) &&
+    Object.values(s.achievements).every((v) => numeric(v))
+      ? s.achievements
+      : {};
+  s.difficulty = ["easy", "normal", "hard"].includes(s.difficulty as string)
+    ? s.difficulty
+    : "normal";
+  s.tutorial =
+    numeric(s.tutorial) && s.tutorial >= 0 && s.tutorial < 20
+      ? s.tutorial
+      : null;
+  const trend = s.market.trend as unknown;
+  s.market.trend =
+    fields(trend, ["until"], ["genre"]) && strings(trend.studios)
+      ? (trend as unknown as GameState["market"]["trend"])
+      : null;
+  s.market.defunct = strings(s.market.defunct) ? s.market.defunct : [];
   s.holdings = Array.isArray(s.holdings)
     ? s.holdings
         .filter((x) =>

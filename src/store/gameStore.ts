@@ -1,7 +1,18 @@
 import { acceptContract, cancelContract } from "../game/contracts/contracts";
 import { setPrice, startDlc, startSale } from "../game/projects/pricing";
 import { bookExpo } from "../game/marketing/expo";
-import { acquireStudio } from "../game/market/rivals";
+import {
+  acquireStudio,
+  buyOutRival,
+  resolveTakeover,
+} from "../game/market/rivals";
+import { cancelConsole, startConsole } from "../game/hardware/consoles";
+import {
+  buyBack,
+  goPublic,
+  issueShares,
+  mergeCompany,
+} from "../game/market/stock";
 import { runCampaign } from "../game/marketing/campaigns";
 import {
   buyCompany,
@@ -15,9 +26,11 @@ import {
   resolveSalary,
   resolveTeamRaise,
 } from "../game/employees/perks";
-import type { BoothSize } from "../game/types";
+import type { BoothSize, Difficulty } from "../game/types";
 import { create } from "zustand";
 import { cloneState } from "../game/state";
+import { checkAchievements } from "../game/progress/achievements";
+import { applyScenario, scenarioById } from "../game/config/scenarios";
 import {
   loanAmount,
   loanLimit,
@@ -69,7 +82,12 @@ type Store = {
   hydrate: (s?: GameState) => void;
   speed: (n: GameState["speed"]) => void;
   advance: () => void;
-  found: (name: string, founder: string) => void;
+  found: (
+    name: string,
+    founder: string,
+    options?: { scenario?: string; difficulty?: Difficulty; tutorial?: boolean },
+  ) => void;
+  advanceTutorial: (step: number | null) => void;
   project: (input: ProjectInput) => boolean;
   savePreset: (name: string, input: ProjectInput) => boolean;
   removePreset: (id: string) => void;
@@ -118,6 +136,13 @@ type Store = {
   bookExpo: (booth: BoothSize, projects: string[]) => boolean;
   acquireStudio: (name: string) => void;
   buyCompany: (offer: CompanyOffer) => void;
+  mergeCompany: (offer: CompanyOffer) => void;
+  goPublic: (float: number) => void;
+  buyBack: () => void;
+  issueShares: () => void;
+  buyOutRival: () => void;
+  startConsole: (name: string, team: string[]) => void;
+  cancelConsole: () => void;
   sellCompany: (id: string) => void;
   reset: () => void;
 };
@@ -130,6 +155,7 @@ export const useGame = create<Store>((set, get) => {
           "Das Studio ist zahlungsunfähig. Lade einen Spielstand oder starte neu.",
         );
       fn(s);
+      if (s.company.founded) checkAchievements(s);
       s.finances.at(-1)!.cash = s.company.cash;
       set({ game: s, error: null });
       return true;
@@ -161,11 +187,14 @@ export const useGame = create<Store>((set, get) => {
         s.speed = speed;
       }),
     advance: () => set({ game: tick(get().game) }),
-    found: (name, founder) =>
+    found: (name, founder, options = {}) =>
       change((s) => {
         s.company.name = name.trim() || "Untitled Studio";
         s.company.founder = founder.trim() || "Alex";
         s.employees[0].name = s.company.founder;
+        applyScenario(s, scenarioById(options.scenario));
+        s.difficulty = options.difficulty ?? "normal";
+        s.tutorial = options.tutorial === false ? null : 0;
         s.company.founded = true;
         notify(
           s,
@@ -173,6 +202,10 @@ export const useGame = create<Store>((set, get) => {
           "Gründe ein Projekt, stelle dein Team zusammen und entwickle dein erstes Spiel.",
           "success",
         );
+      }),
+    advanceTutorial: (step) =>
+      change((s) => {
+        s.tutorial = step;
       }),
     project: (input) => change((s) => createProject(s, input)),
     savePreset: (name, input) =>
@@ -298,6 +331,8 @@ export const useGame = create<Store>((set, get) => {
         if (event.decision === "poach") return resolvePoach(s, id, accept);
         if (event.decision === "salary") return resolveSalary(s, id, accept);
         if (event.decision === "raise") return resolveTeamRaise(s, id, accept);
+        if (event.decision === "takeover")
+          return resolveTakeover(s, id, accept);
         delete event.decision;
         event.read = true;
       }),
@@ -309,6 +344,13 @@ export const useGame = create<Store>((set, get) => {
     bookExpo: (booth, projects) => change((s) => bookExpo(s, booth, projects)),
     acquireStudio: (name) => change((s) => acquireStudio(s, name)),
     buyCompany: (offer) => change((s) => buyCompany(s, offer)),
+    mergeCompany: (offer) => change((s) => mergeCompany(s, offer)),
+    goPublic: (float) => change((s) => goPublic(s, float)),
+    buyBack: () => change((s) => buyBack(s)),
+    issueShares: () => change((s) => issueShares(s)),
+    buyOutRival: () => change((s) => buyOutRival(s)),
+    startConsole: (name, team) => change((s) => startConsole(s, name, team)),
+    cancelConsole: () => change((s) => cancelConsole(s)),
     sellCompany: (id) => change((s) => sellCompany(s, id)),
     reset: () => set({ game: initialState(), error: null }),
   };
