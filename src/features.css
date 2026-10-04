@@ -2269,28 +2269,58 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.price-chart-frame {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.price-chart-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 160px;
+  text-align: right;
+  font: 600 9.5px var(--font-display);
+  color: var(--ft-muted);
+}
+.price-chart-plot {
+  min-width: 0;
+}
 .price-chart {
   display: block;
   width: 100%;
-  height: 150px;
-  margin-top: 10px;
+  height: 160px;
+  border-bottom: 1px solid var(--line);
+}
+.price-chart .price-grid {
+  stroke: #ffffff12;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 .price-chart .price-line {
   fill: none;
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
-.price-chart.up .price-line {
+.price-chart-frame.up .price-line {
   stroke: var(--ft-green);
 }
-.price-chart.down .price-line {
+.price-chart-frame.down .price-line {
   stroke: var(--ft-red);
 }
 .price-chart .price-area {
   fill: #afc89714;
 }
-.price-chart.down .price-area {
+.price-chart-frame.down .price-area {
   fill: #eea68012;
+}
+.price-chart-dates {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 9.5px;
+  color: var(--ft-muted);
 }
 .stock-quarter-figures {
   display: grid;
@@ -2784,4 +2814,59 @@
   min-width: 0;
   padding: 0;
   margin: 0;
+}
+
+/* Cards of the newer views: content shares the inner padding of the title. */
+.game-panel .stock-ipo,
+.game-panel .stock-chart-card,
+.game-panel .stock-quarter,
+.game-panel .stock-actions,
+.game-panel .hardware-project,
+.game-panel .hardware-new,
+.game-panel .hardware-console,
+.game-panel .achievements-group,
+.game-panel .acquisitions-card {
+  padding: 22px 25px;
+}
+.game-panel .stock-view .card > .panel-title,
+.game-panel .hardware-view .card > .panel-title,
+.game-panel .acquisitions-card > .panel-title {
+  padding: 0;
+}
+.stock-view .two-columns {
+  align-items: stretch;
+}
+.stock-quarter .progress,
+.stock-ipo .progress {
+  height: 6px;
+}
+.stock-quarter .hint,
+.stock-actions .hint {
+  margin: 12px 0 0;
+}
+.stock-actions .button-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stock-ipo .eyebrow {
+  display: block;
+}
+.game-root .stock-ipo-action .game-select {
+  height: 48px;
+}
+@media (max-width: 720px) {
+  .game-panel .stock-ipo,
+  .game-panel .stock-chart-card,
+  .game-panel .stock-quarter,
+  .game-panel .stock-actions,
+  .game-panel .hardware-project,
+  .game-panel .hardware-new,
+  .game-panel .hardware-console,
+  .game-panel .achievements-group,
+  .game-panel .acquisitions-card {
+    padding: 18px;
+  }
+  .stock-actions .button-row .button {
+    flex: 1;
+  }
 }

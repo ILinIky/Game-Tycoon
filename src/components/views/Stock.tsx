@@ -51,17 +51,46 @@ function PriceChart({ points }: { points: { day: number; price: number }[] }) {
     )
     .join(" ");
   const up = points.at(-1)!.price >= points[0].price;
+  const price = (v: number) =>
+    v.toLocaleString("de-DE", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: v < 100 ? 2 : 0,
+    });
   return (
-    <svg
-      className={`price-chart ${up ? "up" : "down"}`}
-      viewBox={`0 0 ${w} ${h}`}
-      preserveAspectRatio="none"
-      role="img"
-      aria-label={`Kursverlauf von ${money(points[0].price)} bis ${money(points.at(-1)!.price)}`}
-    >
-      <path className="price-area" d={`${line} L${w},${h} L0,${h} Z`} />
-      <path className="price-line" d={line} />
-    </svg>
+    <div className={`price-chart-frame ${up ? "up" : "down"}`}>
+      <div className="price-chart-axis" aria-hidden>
+        <span>{price(max)}</span>
+        <span>{price((max + min) / 2)}</span>
+        <span>{price(min)}</span>
+      </div>
+      <div className="price-chart-plot">
+        <svg
+          className="price-chart"
+          viewBox={`0 0 ${w} ${h}`}
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`Kursverlauf von ${money(points[0].price)} bis ${money(points.at(-1)!.price)}`}
+        >
+          {[8, h / 2, h - 8].map((gy) => (
+            <line
+              key={gy}
+              className="price-grid"
+              x1="0"
+              x2={w}
+              y1={gy}
+              y2={gy}
+            />
+          ))}
+          <path className="price-area" d={`${line} L${w},${h} L0,${h} Z`} />
+          <path className="price-line" d={line} />
+        </svg>
+        <div className="price-chart-dates" aria-hidden>
+          <span>{dateLabel(points[0].day)}</span>
+          <span>{dateLabel(points.at(-1)!.day)}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -87,7 +116,8 @@ function Ipo() {
           Büro: mindestens Studio-Campus
         </span>
         <span className={fundamental >= ipoMinimum(s) ? "ok" : ""}>
-          Firmenwert {compactEuro(fundamental)} von {compactEuro(ipoMinimum(s))}
+          Firmenwert {compactEuro(fundamental)} · nötig{" "}
+          {compactEuro(ipoMinimum(s))}
         </span>
       </div>
       <Progress value={Math.min(100, (fundamental / ipoMinimum(s)) * 100)} />
